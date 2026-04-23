@@ -1,0 +1,10 @@
+﻿@model IEnumerable<Vault.Core.IVaultFeatureMetaData>
+
+<h2>Available Features</h2>
+
+<ul>
+    @foreach (var feature in Model)
+    {
+        <li><a href="@feature.Route">@feature.Name</a></li>
+    }
+</ul>

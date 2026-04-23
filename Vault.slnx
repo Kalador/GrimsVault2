@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../GrimsVault/GrimsVault.csproj" />
+  <Project Path="Vault.csproj" />
+</Solution>

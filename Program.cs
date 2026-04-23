@@ -1,29 +1,60 @@
+using Microsoft.AspNetCore.Mvc.Razor;
+using Vault.Core;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.Configure<RazorViewEngineOptions>(options =>
+{
+    options.ViewLocationFormats.Add("/Features/{1}/Views/{0}.cshtml");
+    options.ViewLocationFormats.Add("/Features/{1}/Views/Shared/{0}.cshtml");
+});
+
+
+// Register VaultService
+builder.Services.AddScoped<VaultService>();
+
+// Dynamically register all IVaultFeature implementations
+var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+foreach (var assembly in assemblies)
+{
+    // 1. Register all feature services (IVaultFeature)
+    var featureServices = assembly.GetTypes()
+        .Where(t => typeof(IVaultFeature).IsAssignableFrom(t))
+        .Where(t => t.IsClass && !t.IsAbstract);
+
+    foreach (var type in featureServices)
+    {
+        // Register as the feature service interface
+        builder.Services.AddScoped(typeof(IVaultFeature), type);
+
+        // ALSO register as itself so controllers can inject it
+        builder.Services.AddScoped(type);
+    }
+
+    // 2. Register all metadata providers (IVaultFeatureMetaData)
+    var metadataTypes = assembly.GetTypes()
+        .Where(t => typeof(IVaultFeatureMetaData).IsAssignableFrom(t))
+        .Where(t => t.IsClass && !t.IsAbstract);
+
+    foreach (var type in metadataTypes)
+    {
+        builder.Services.AddScoped(typeof(IVaultFeatureMetaData), type);
+
+        // If metadata is on the same class as the service, this is harmless
+        builder.Services.AddScoped(type);
+    }
+}
+
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
-}
-
-app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseRouting();
-
-app.UseAuthorization();
-
-app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller}/{action}/{id?}")
-    .WithStaticAssets();
-
+    pattern: "{controller=Vault}/{action=Index}/{id?}");
 
 app.Run();
