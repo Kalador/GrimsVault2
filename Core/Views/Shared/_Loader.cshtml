@@ -1,0 +1,24 @@
+﻿@model Vault.Core.LoaderModel
+
+<div id="vault-loader" class="vault-loader">
+    <h2 class="vault-loader-text">@Model.Message</h2>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        fetch("@Model.TargetUrl", {
+            method: "POST",
+            headers: {
+                "X-Loader-Action": "@Model.TargetAction"
+            }
+        })
+        .then(r => r.text())
+        .then(html => {
+            document.getElementById("vault-loader").outerHTML = html;
+        })
+        .catch(err => {
+            document.getElementById("vault-loader").innerHTML =
+                "<p style='color:red;'>Failed to load content.</p>";
+        });
+    });
+</script>

@@ -6,4 +6,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EditorConfigFiles Remove="C:\Users\User\source\repos\Kalador\Vault\.editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="C:\Users\User\source\repos\Kalador\Vault\.editorconfig" />
+  </ItemGroup>
+
 </Project>
