@@ -32,13 +32,14 @@ public class VaultController(VaultService vault, IEnumerable<IVaultFeature> feat
 
     /// <summary>
     /// Endpoint to query Notion for items.
+    /// 
     /// </summary>
     [LoaderAction]
     [HttpPost("notion")]
     public async Task<IActionResult> NotionPost([FromHeader(Name = "X-Loader-Action")] string action)
     {
         // Pull items using default page size (your client handles this)
-        var items = await _vault.GetItems(10);
+        var items = await _vault.GetItems();
 
         // Extract just the names
         var names = items

@@ -6,6 +6,9 @@
 
 #Custom Shizzle
 **/appsettings.Secrets.json
+App_Data/*
+!App_Data/.gitkeep
+
 
 # User-specific files
 *.rsuser
