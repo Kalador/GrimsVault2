@@ -1,4 +1,5 @@
-﻿namespace Vault.Core;
+﻿using Vault.ViewModes;
+namespace Vault.Core;
 
 /// <summary>
 /// All services added by modular features MUST implement this interface to be enumerated and registered by the VaultService.
@@ -8,6 +9,11 @@ public interface IVaultFeature
     IVaultFeatureMetaData MetaData { get; }
 
     String Status();
+
+    /// <summary>
+    /// The Default ViewMode for the feature. This is used to determine which view mode to use when displaying the feature in the VaultService.
+    /// </summary>
+    VaultViewMode DefaultViewMode { get; }
 
 }
 /// <summary>
@@ -24,4 +30,5 @@ public interface IVaultFeatureMetaData
     /// Destination route for the feature.
     /// </summary>
     string Route { get; }
+
 }

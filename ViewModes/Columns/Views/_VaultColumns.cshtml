@@ -1,0 +1,140 @@
+﻿@model Vault.Core.Internal.PageContentModel
+<link rel="stylesheet" href="~/css/vault-columns.css" />
+
+<div class="container-wide">
+    <div class="vault-view">
+
+        <div class="columns">
+
+            @foreach (var group in Model.Groups)
+            {
+                var columnKey = group.Title
+                    .ToLower()
+                    .Replace(" ", "")
+                    .Replace("-", "")
+                    .Replace("_", "");
+
+                <div class="column" data-column="@columnKey">
+                    <div class="column-header">@group.Title</div>
+
+                    @foreach (var item in group.Items)
+                    {
+                        @await Html.PartialAsync("_VaultCard.cshtml", item)
+                    }
+                </div>
+            }
+
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // ------------------------------------------------------------
+    // Retry logic (generic)
+    // ------------------------------------------------------------
+    document.addEventListener("click", async (e) => {
+        const card = e.target.closest(".retry-card");
+        if (!card) return;
+
+        const id = card.dataset.id;
+        card.innerHTML = "<div class='meta'>Retrying…</div>";
+
+        try {
+            const response = await fetch(`/vault/retry?id=${id}`);
+            const data = await response.json();
+
+            const wrapper = document.createElement("div");
+            wrapper.innerHTML = data.html.trim();
+
+            const newRoot = wrapper.firstElementChild;
+
+            if (!newRoot) {
+                card.innerHTML = "<div class='meta'>Retry failed. Empty response.</div>";
+                return;
+            }
+
+            if (newRoot.classList.contains("retry-card")) {
+                card.replaceWith(newRoot);
+                return;
+            }
+
+            const cardRoot = newRoot.querySelector(".vault-card");
+            if (!cardRoot) {
+                card.innerHTML = "<div class='meta'>Retry failed. Invalid card structure.</div>";
+                return;
+            }
+
+            const category = cardRoot.dataset.category;
+            if (!category) {
+                card.replaceWith(newRoot);
+                return;
+            }
+
+            const targetColumn = document.querySelector(`.column[data-column="${category}"]`);
+            if (!targetColumn) {
+                card.replaceWith(newRoot);
+                return;
+            }
+
+            card.remove();
+
+            const newNameElement = newRoot.querySelector(".vault-card-title");
+            const newName = newNameElement
+                ? newNameElement.innerText.trim().toLowerCase()
+                : "";
+
+            const siblings = Array.from(targetColumn.children)
+                .filter(el => el !== newRoot && el.querySelector && el.querySelector(".vault-card-title"));
+
+            let inserted = false;
+
+            for (const sibling of siblings) {
+                const siblingTitleElement = sibling.querySelector(".vault-card-title");
+                if (!siblingTitleElement) continue;
+
+                const siblingName = siblingTitleElement.innerText.trim().toLowerCase();
+                if (newName && newName < siblingName) {
+                    sibling.before(newRoot);
+                    inserted = true;
+                    break;
+                }
+            }
+
+            if (!inserted) {
+                targetColumn.appendChild(newRoot);
+            }
+
+        } catch (err) {
+            card.innerHTML = "<div class='meta'>Retry failed. Try again.</div>";
+        }
+    });
+
+    // ------------------------------------------------------------
+    // Ticker logic (generic)
+    // ------------------------------------------------------------
+    function applyTickers(selector) {
+        document.querySelectorAll(selector).forEach(el => {
+            const content = el.querySelector('.ticker-content');
+            if (!content) return;
+
+            if (content.scrollWidth > el.clientWidth) {
+                content.classList.add('scroll');
+            } else {
+                content.classList.remove('scroll');
+            }
+        });
+    }
+
+    // Initial run
+    applyTickers('.vault-card-title');
+    applyTickers('.vault-row-ticker');
+
+    // Re-run after retry inserts a new card
+    const observer = new MutationObserver(() => {
+        applyTickers('.vault-card-title');
+        applyTickers('.vault-row-ticker');
+    });
+
+    observer.observe(document.querySelector('.vault-view'), { childList: true, subtree: true });
+</script>

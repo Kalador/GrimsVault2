@@ -34,7 +34,7 @@ public class CexController(CexService cexService) : Controller
     private async Task<IActionResult> LoadCEXItems()
     {
         var result = await cexService.GetItemsWithCacheAsync();
-        return Ok(result);
+        return PartialView(cexService.DefaultViewMode.PartialView, result);
     }
 
 
