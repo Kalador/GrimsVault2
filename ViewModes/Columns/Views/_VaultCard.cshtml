@@ -1,7 +1,6 @@
 ﻿@model Vault.Core.Internal.PageContentItem
 
 @{
-    // Extract metadata
     var id = Model.Meta.ContainsKey("id") ? Model.Meta["id"]?.ToString() : "";
     var category = Model.Meta.ContainsKey("category") ? Model.Meta["category"]?.ToString() : "";
     var error = Model.Meta.ContainsKey("error") && (bool)Model.Meta["error"];
@@ -9,15 +8,13 @@
 
 @if (!error)
 {
-    <!-- NORMAL CARD -->
-    <a class="vault-card-link" href="@Model.Url" target="_blank">
-        <div class="vault-card compact"
+    <a class="card-link" href="@Model.Url" target="_blank">
+        <div class="column-card compact"
              data-id="@id"
              data-category="@category">
 
             <div style="display:flex; gap:1rem; align-items:flex-start;">
 
-                <!-- Image -->
                 <div>
                     @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
                     {
@@ -32,17 +29,14 @@
                     }
                 </div>
 
-                <!-- Content -->
                 <div style="flex:1; display:flex; flex-direction:column;">
 
-                    <!-- Title -->
-                    <div class="vault-card-title ticker">
+                    <div class="column-card-title ticker">
                         <div class="ticker-content">
                             @Model.Title
                         </div>
                     </div>
 
-                    <!-- Subtitle -->
                     @if (!string.IsNullOrWhiteSpace(Model.Subtitle))
                     {
                         <div class="meta" style="font-size:1.4rem; font-weight:700;">
@@ -50,12 +44,15 @@
                         </div>
                     }
 
-                    <!-- Footer -->
-                    <div class="vault-row">
-                        <div class="meta ticker vault-row-ticker">
+                    <div class="column-row">
+                        <div class="meta ticker column-row-ticker">
                             <div class="ticker-content">
                                 @Model.Footer
                             </div>
+                        </div>
+
+                        <div class="column-row-footer">
+                            <span class="column-footer-item"></span>
                         </div>
                     </div>
 
@@ -67,11 +64,9 @@
 }
 else
 {
-    <!-- ERROR CARD (CLICK TO RETRY) -->
-    <div class="vault-card compact retry-card" data-id="@id" style="cursor:pointer;">
+    <div class="column-card compact column-retry-card" data-id="@id" style="cursor:pointer;">
         <div style="display:flex; gap:1rem; align-items:flex-start;">
 
-            <!-- Image -->
             <div>
                 <div class="text-muted" style="width:80px; height:80px; background:#eee;
                     display:flex; align-items:center; justify-content:center; border-radius:6px;">
@@ -79,9 +74,8 @@ else
                 </div>
             </div>
 
-            <!-- Content -->
             <div style="flex:1;">
-                <div class="vault-card-title">Error. Click to Retry</div>
+                <div class="column-card-title">Error. Click to Retry</div>
 
                 <div class="meta" style="font-size:1.4rem; font-weight:700;">
                     @Model.Subtitle

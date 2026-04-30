@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc.Razor;
+using Microsoft.Extensions.FileProviders;
 using Vault.Core;
 using Vault.Data;
 using Vault.Data.Notion;
@@ -57,7 +58,6 @@ if (Directory.Exists(dataRoot))
     }
 }
 
-
 // Register modular features
 var featureTypes = AppDomain.CurrentDomain.GetAssemblies()
     .SelectMany(a => a.GetTypes())
@@ -79,8 +79,30 @@ foreach (var type in featureTypes)
 // Build and configure the request pipeline
 //
 var app = builder.Build();
-
 app.UseStaticFiles();
+
+// Expose wwwroot folders in any found ViewMode folders:
+var viewModesRoot = Path.Combine(builder.Environment.ContentRootPath, "ViewModes");
+if (Directory.Exists(viewModesRoot))
+{
+    foreach (var dir in Directory.GetDirectories(viewModesRoot))
+    {
+        var wwwroot = Path.Combine(dir, "wwwroot");
+        if (Directory.Exists(wwwroot))
+        {
+            var folderName = Path.GetFileName(dir); 
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(wwwroot),
+                RequestPath = $"/ViewModes/{folderName}"
+
+            });
+        }
+    }
+}
+
+
+
 app.UseRouting();
 
 app.MapControllerRoute(

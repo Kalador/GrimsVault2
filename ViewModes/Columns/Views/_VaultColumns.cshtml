@@ -1,5 +1,8 @@
 ﻿@model Vault.Core.Internal.PageContentModel
-<link rel="stylesheet" href="~/css/vault-columns.css" />
+<link rel="stylesheet" href="/ViewModes/Columns/css/vault-columns.css" />
+
+
+
 
 <div class="container-wide">
     <div class="vault-view">
@@ -30,11 +33,8 @@
 </div>
 
 <script>
-    // ------------------------------------------------------------
-    // Retry logic (generic)
-    // ------------------------------------------------------------
     document.addEventListener("click", async (e) => {
-        const card = e.target.closest(".retry-card");
+        const card = e.target.closest(".column-retry-card");
         if (!card) return;
 
         const id = card.dataset.id;
@@ -54,12 +54,12 @@
                 return;
             }
 
-            if (newRoot.classList.contains("retry-card")) {
+            if (newRoot.classList.contains("column-retry-card")) {
                 card.replaceWith(newRoot);
                 return;
             }
 
-            const cardRoot = newRoot.querySelector(".vault-card");
+            const cardRoot = newRoot.querySelector(".column-card");
             if (!cardRoot) {
                 card.innerHTML = "<div class='meta'>Retry failed. Invalid card structure.</div>";
                 return;
@@ -79,18 +79,18 @@
 
             card.remove();
 
-            const newNameElement = newRoot.querySelector(".vault-card-title");
+            const newNameElement = newRoot.querySelector(".column-card-title");
             const newName = newNameElement
                 ? newNameElement.innerText.trim().toLowerCase()
                 : "";
 
             const siblings = Array.from(targetColumn.children)
-                .filter(el => el !== newRoot && el.querySelector && el.querySelector(".vault-card-title"));
+                .filter(el => el !== newRoot && el.querySelector && el.querySelector(".column-card-title"));
 
             let inserted = false;
 
             for (const sibling of siblings) {
-                const siblingTitleElement = sibling.querySelector(".vault-card-title");
+                const siblingTitleElement = sibling.querySelector(".column-card-title");
                 if (!siblingTitleElement) continue;
 
                 const siblingName = siblingTitleElement.innerText.trim().toLowerCase();
@@ -110,9 +110,6 @@
         }
     });
 
-    // ------------------------------------------------------------
-    // Ticker logic (generic)
-    // ------------------------------------------------------------
     function applyTickers(selector) {
         document.querySelectorAll(selector).forEach(el => {
             const content = el.querySelector('.ticker-content');
@@ -126,14 +123,12 @@
         });
     }
 
-    // Initial run
-    applyTickers('.vault-card-title');
-    applyTickers('.vault-row-ticker');
+    applyTickers('.column-card-title');
+    applyTickers('.column-row-ticker');
 
-    // Re-run after retry inserts a new card
     const observer = new MutationObserver(() => {
-        applyTickers('.vault-card-title');
-        applyTickers('.vault-row-ticker');
+        applyTickers('.column-card-title');
+        applyTickers('.column-row-ticker');
     });
 
     observer.observe(document.querySelector('.vault-view'), { childList: true, subtree: true });

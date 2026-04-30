@@ -1,0 +1,96 @@
+﻿/* -------------------------------------------------- */
+/* COLUMNS LAYOUT                                      */
+/* -------------------------------------------------- */
+
+.columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.column {
+    display: block;
+}
+
+.column-header {
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+    text-align: center;
+}
+
+/* -------------------------------------------------- */
+/* CARD SYSTEM (Columns-only)                          */
+/* -------------------------------------------------- */
+
+.column-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    min-height: 90px;
+}
+
+    .column-card.compact {
+        padding: 0.75rem 1rem 0.5rem;
+    }
+
+.column-card-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+/* -------------------------------------------------- */
+/* INLINE ROW + FOOTER                                 */
+/* -------------------------------------------------- */
+
+.column-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.column-row-ticker {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.column-row-footer {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+    color: #888;
+    opacity: 0.85;
+    line-height: 1;
+}
+
+.column-footer-item {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* -------------------------------------------------- */
+/* RETRY CARD                                          */
+/* -------------------------------------------------- */
+
+.column-retry-card {
+    border: 1px solid #f5c6cb;
+    background: #fff5f5;
+}
+
+/* -------------------------------------------------- */
+/* LINKS                                               */
+/* -------------------------------------------------- */
+
+.card-link {
+    text-decoration: none;
+    color: inherit;
+}

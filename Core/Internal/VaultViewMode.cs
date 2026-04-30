@@ -1,7 +1,6 @@
 ﻿/// <summary>
 /// Base type for all Vault ViewModes.
 ///
-/// A ViewMode defines *how* a Vault page is rendered.
 /// Each ViewMode is a drop-in module located under:
 ///     /ViewModes/{Name}/
 ///
