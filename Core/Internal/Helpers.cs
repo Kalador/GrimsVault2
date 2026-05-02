@@ -29,5 +29,16 @@
             return ts.ToLocalTime().ToString("dd/MM/yy");
         }
 
+        /// <summary>
+        /// Formats Decical Prices into natural current format.
+        /// </summary>
+        /// <param name="price">Decimal Price</param>
+        public static string FormatPrice(this decimal price)
+        {
+            return price % 1 == 0
+                ? $"£{price:0}"
+                : $"£{price:0.00}";
+        }
+
     }
 }

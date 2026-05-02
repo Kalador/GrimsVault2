@@ -2,134 +2,17 @@
 <link rel="stylesheet" href="/ViewModes/Columns/css/vault-columns.css" />
 
 
+<div class="columns">
+    @foreach (var group in Model.Items.GroupBy(i => i.Group))
+    {
+        <div class="column" data-group="@group.Key">
+            <div class="column-header">@group.Key</div>
 
-
-<div class="container-wide">
-    <div class="vault-view">
-
-        <div class="columns">
-
-            @foreach (var group in Model.Groups)
+            @foreach (var item in group)
             {
-                var columnKey = group.Title
-                    .ToLower()
-                    .Replace(" ", "")
-                    .Replace("-", "")
-                    .Replace("_", "");
-
-                <div class="column" data-column="@columnKey">
-                    <div class="column-header">@group.Title</div>
-
-                    @foreach (var item in group.Items)
-                    {
-                        @await Html.PartialAsync("_VaultCard.cshtml", item)
-                    }
-                </div>
+                @await Html.PartialAsync("_VaultCard.cshtml", item)
             }
-
         </div>
-
-    </div>
+    }
 </div>
 
-<script>
-    document.addEventListener("click", async (e) => {
-        const card = e.target.closest(".column-retry-card");
-        if (!card) return;
-
-        const id = card.dataset.id;
-        card.innerHTML = "<div class='meta'>Retrying…</div>";
-
-        try {
-            const response = await fetch(`/vault/retry?id=${id}`);
-            const data = await response.json();
-
-            const wrapper = document.createElement("div");
-            wrapper.innerHTML = data.html.trim();
-
-            const newRoot = wrapper.firstElementChild;
-
-            if (!newRoot) {
-                card.innerHTML = "<div class='meta'>Retry failed. Empty response.</div>";
-                return;
-            }
-
-            if (newRoot.classList.contains("column-retry-card")) {
-                card.replaceWith(newRoot);
-                return;
-            }
-
-            const cardRoot = newRoot.querySelector(".column-card");
-            if (!cardRoot) {
-                card.innerHTML = "<div class='meta'>Retry failed. Invalid card structure.</div>";
-                return;
-            }
-
-            const category = cardRoot.dataset.category;
-            if (!category) {
-                card.replaceWith(newRoot);
-                return;
-            }
-
-            const targetColumn = document.querySelector(`.column[data-column="${category}"]`);
-            if (!targetColumn) {
-                card.replaceWith(newRoot);
-                return;
-            }
-
-            card.remove();
-
-            const newNameElement = newRoot.querySelector(".column-card-title");
-            const newName = newNameElement
-                ? newNameElement.innerText.trim().toLowerCase()
-                : "";
-
-            const siblings = Array.from(targetColumn.children)
-                .filter(el => el !== newRoot && el.querySelector && el.querySelector(".column-card-title"));
-
-            let inserted = false;
-
-            for (const sibling of siblings) {
-                const siblingTitleElement = sibling.querySelector(".column-card-title");
-                if (!siblingTitleElement) continue;
-
-                const siblingName = siblingTitleElement.innerText.trim().toLowerCase();
-                if (newName && newName < siblingName) {
-                    sibling.before(newRoot);
-                    inserted = true;
-                    break;
-                }
-            }
-
-            if (!inserted) {
-                targetColumn.appendChild(newRoot);
-            }
-
-        } catch (err) {
-            card.innerHTML = "<div class='meta'>Retry failed. Try again.</div>";
-        }
-    });
-
-    function applyTickers(selector) {
-        document.querySelectorAll(selector).forEach(el => {
-            const content = el.querySelector('.ticker-content');
-            if (!content) return;
-
-            if (content.scrollWidth > el.clientWidth) {
-                content.classList.add('scroll');
-            } else {
-                content.classList.remove('scroll');
-            }
-        });
-    }
-
-    applyTickers('.column-card-title');
-    applyTickers('.column-row-ticker');
-
-    const observer = new MutationObserver(() => {
-        applyTickers('.column-card-title');
-        applyTickers('.column-row-ticker');
-    });
-
-    observer.observe(document.querySelector('.vault-view'), { childList: true, subtree: true });
-</script>

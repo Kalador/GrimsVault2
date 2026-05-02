@@ -8,8 +8,15 @@
 //
 //  The structure is intentionally generic:
 //      PageContentModel
-//          -> Groups (e.g., columns, categories, sections)
-//              -> Items (cards)
+//          -> Items (cards)
+//              -> Group (string category assigned by the feature)
+//
+//  ViewModes may interpret groups as:
+//      - Columns
+//      - Categories
+//      - Sections
+//      - Tabs
+//      - Any other layout concept
 //
 //  No feature-specific or viewmode-specific types belong here.
 //  This ensures ViewModes remain drop‑in modules and Features remain isolated.
@@ -24,29 +31,8 @@ namespace Vault.Core.Internal;
 public class PageContentModel
 {
     /// <summary>
-    /// Logical groups of items. A ViewMode may interpret these as:
-    /// - Columns
-    /// - Categories
-    /// - Sections
-    /// - Widgets
-    /// - Any other layout concept
-    /// </summary>
-    public List<PageContentGroup> Groups { get; set; } = new();
-}
-
-/// <summary>
-/// A logical grouping of items. The meaning of a group is defined by the feature.
-/// ViewModes do not assume any semantics beyond "a group contains items".
-/// </summary>
-public class PageContentGroup
-{
-    /// <summary>
-    /// Display label for the group (e.g., "Priority", "Out of Stock", "Recently Added").
-    /// </summary>
-    public string Title { get; set; } = "";
-
-    /// <summary>
-    /// The items/cards contained in this group.
+    /// A flat list of items. Each item carries its own Group string.
+    /// ViewModes may group these dynamically (e.g., into columns).
     /// </summary>
     public List<PageContentItem> Items { get; set; } = new();
 }
@@ -57,6 +43,11 @@ public class PageContentGroup
 /// </summary>
 public class PageContentItem
 {
+    /// <summary>
+    /// The logical group/category this item belongs to.
+    /// </summary>
+    public string Group { get; set; } = "";
+
     /// <summary>
     /// Primary display text for the card.
     /// </summary>
@@ -73,9 +64,14 @@ public class PageContentItem
     public string? Subtitle { get; set; }
 
     /// <summary>
+    /// Text for a scrolling ticker in the footer.
+    /// </summary>
+    public string? Ticker { get; set; }
+
+    /// <summary>
     /// Optional footer text (e.g., timestamp, status).
     /// </summary>
-    public string? Footer { get; set; }
+    public string? SecondFooter { get; set; }
 
     /// <summary>
     /// Optional URL the card links to.
@@ -83,11 +79,13 @@ public class PageContentItem
     public string? Url { get; set; }
 
     /// <summary>
-    /// Arbitrary metadata for ViewModes to use.
-    /// Examples:
-    ///     Meta["category"] = "priority"
-    ///     Meta["raw"] = originalFeatureModel
-    ///
+    /// Indicates whether the feature encountered an error producing this item.
+    /// ViewModes may choose to render error states differently.
+    /// </summary>
+    public bool HasError { get; set; }
+
+    /// <summary>
+    /// Arbitrary metadata for ViewModes or Features to use.
     /// ViewModes should treat this as optional and defensive.
     /// </summary>
     public Dictionary<string, object> Meta { get; set; } = [];

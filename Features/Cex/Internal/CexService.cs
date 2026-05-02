@@ -51,17 +51,11 @@ public class CexService(VaultService vault) : IVaultFeature
             .ReadCache<Dictionary<string, CexBox>>(cacheFile)
             ?? new Dictionary<string, CexBox>();
 
-        // 3. Load priority stores (same as old system)
-        //TODO: This is a bit of a hack, but it works for now.
+        // 3. Priority stores (hack for now)
         var priorityStores = new[] { "Leeds" };
-        //var priorityStores = await vault.GetCexStoresAsync(priorityOnly: true);
 
-        // 4. Build the PageContentModel
+        // 4. Build flat PageContentModel
         var model = new PageContentModel();
-
-        var priorityGroup = new PageContentGroup { Title = "Priority Stock" };
-        var otherGroup = new PageContentGroup { Title = "Other Stock" };
-        var outGroup = new PageContentGroup { Title = "Out of Stock" };
 
         foreach (var item in items)
         {
@@ -71,58 +65,118 @@ public class CexService(VaultService vault) : IVaultFeature
             // Build card
             var card = new PageContentItem
             {
-                Title = box?.BoxName ?? item.Name ?? "(no name)",
+                Title = "🎮 " + (box?.BoxName ?? item.Name ?? "(no name)"),
                 ImageUrl = box?.ImageUrl,
-                Subtitle = box != null ? $"£{box.SellPrice:0.00}" : null,
-                Footer = box != null ? Helpers.FormatAge(box.LastRefreshed) : null,
+                Subtitle = box?.SellPrice.FormatPrice(),
+                
+                // Correct ticker: raw store names (v1 behaviour)
+                Ticker = BuildTicker(box!, priorityStores),
+
+
+                // Timestamp footer
+                SecondFooter = "🕒 " + box?.LastRefreshed.FormatAge(),
+
+
                 Url = box != null ? $"https://uk.webuy.com/product-detail?id={box.BoxId}" : null,
+
+                // New first‑class error property
+                HasError = box?.HasError ?? true,
+
+                // Clean Meta (no raw, no error)
                 Meta =
             {
-                ["id"] = cexId,
-                ["error"] = box?.HasError ?? true,
-                ["stores"] = box?.StoresInStock ?? [],
-                ["raw"] = box
+                ["id"]     = cexId,
+                ["stores"] = box?.StoresInStock ?? []
             }
             };
 
-            // Determine grouping (faithful to old logic)
+            // Determine grouping
             if (box == null || box.HasError)
             {
-                outGroup.Items.Add(card);
+                card.Group = "Out of Stock";
+                model.Items.Add(card);
                 continue;
             }
 
-            //var localStores = box.StoresInStock
-            //    .Where(store =>
-            //        priorityStores.Any(p =>
-            //            store.Contains(p.Name, StringComparison.OrdinalIgnoreCase)))
-            //    .ToList();
-
-            //ToDo: This is a bit of a hack
             var localStores = box.StoresInStock
-    .Where(store =>
-        priorityStores.Any(p =>
-            store.Contains(p, StringComparison.OrdinalIgnoreCase)))
-    .ToList();
+                .Where(store =>
+                    priorityStores.Any(p =>
+                        store.Contains(p, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
 
-
-            bool hasPriority = localStores.Any();
-            bool hasAnyStock = box.StoresInStock.Any();
+            bool hasPriority = localStores.Count != 0;
+            bool hasAnyStock = box.StoresInStock.Count != 0;
 
             if (hasPriority)
-                priorityGroup.Items.Add(card);
+                card.Group = "Priority Stock";
             else if (hasAnyStock)
-                otherGroup.Items.Add(card);
+                card.Group = "Other Stock";
             else
-                outGroup.Items.Add(card);
-        }
+                card.Group = "Out of Stock";
 
-        model.Groups.Add(priorityGroup);
-        model.Groups.Add(otherGroup);
-        model.Groups.Add(outGroup);
+            model.Items.Add(card);
+        }
 
         return model;
     }
+
+    private static string BuildTicker(CexBox box, string[] priorityStores)
+    {
+        if (box == null || box.HasError)
+            return "<span class='text-muted'>Out of Stock</span>";
+
+        var parts = new List<string>();
+
+        // 1. Online stock
+        if (box.StockOnline > 0)
+            parts.Add("Online");
+
+        // 2. Priority stores (badge style)
+        var priority = box.StoresInStock
+            .Where(store =>
+                priorityStores.Any(p =>
+                    store.Contains(p, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+
+        foreach (var store in priority)
+        {
+            parts.Add(
+                $"<span class='status-badge' " +
+                $"style='background-color:#d4edda; color:#155724;'>" +
+                $"{store}</span>"
+            );
+        }
+
+        // 3. Non‑priority stores
+        var nonPriorityCount = box.StoresInStock.Count - priority.Count;
+
+        if (priority.Count > 0)
+        {
+            // PRIORITY STOCK COLUMN
+            if (nonPriorityCount == 1)
+                parts.Add("1 Other Store");
+            else if (nonPriorityCount > 1)
+                parts.Add($"{nonPriorityCount} Other Stores");
+        }
+        else
+        {
+            // OTHER STOCK COLUMN
+            if (box.StoresInStock.Count == 1)
+                parts.Add("1 Store");
+            else if (box.StoresInStock.Count > 1)
+                parts.Add($"{box.StoresInStock.Count} Stores");
+        }
+
+        // 4. Out of stock fallback
+        if (parts.Count == 0)
+            return "<span class='text-muted'>Out of Stock</span>";
+
+        return string.Join(", ", parts);
+    }
+
+
+
+
 
 
 

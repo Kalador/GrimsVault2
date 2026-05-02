@@ -1,87 +1,94 @@
 ﻿@model Vault.Core.Internal.PageContentItem
 
-@{
-    var id = Model.Meta.ContainsKey("id") ? Model.Meta["id"]?.ToString() : "";
-    var category = Model.Meta.ContainsKey("category") ? Model.Meta["category"]?.ToString() : "";
-    var error = Model.Meta.ContainsKey("error") && (bool)Model.Meta["error"];
-}
-
-@if (!error)
+@if (!Model.HasError)
 {
     <a class="card-link" href="@Model.Url" target="_blank">
-        <div class="column-card compact"
-             data-id="@id"
-             data-category="@category">
+        <div class="column-card"
+             data-id="@Model.Meta.GetValueOrDefault("id")"
+             data-group="@Model.Group">
 
-            <div style="display:flex; gap:1rem; align-items:flex-start;">
+            <div class="column-card-inner">
 
+                <!-- Image -->
                 <div>
                     @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
                     {
-                        <img src="@Model.ImageUrl" alt="@Model.Title" style="height:80px; border-radius:6px;" />
+                        <img src="@Model.ImageUrl"
+                             alt="@Model.Title"
+                             style="height:80px; width:auto; border-radius:6px; display:block;" />
                     }
                     else
                     {
-                        <div class="text-muted" style="width:80px; height:80px; background:#eee;
-                            display:flex; align-items:center; justify-content:center; border-radius:6px;">
+                        <div class="column-card-noimage">
                             No Image
                         </div>
                     }
                 </div>
 
-                <div style="flex:1; display:flex; flex-direction:column;">
+                <!-- Content -->
+                <div class="column-card-content">
 
-                    <div class="column-card-title ticker">
-                        <div class="ticker-content">
-                            @Model.Title
+                    <div class="column-card-title">
+                        <div class="ticker column-card-title-ticker">
+                            <div class="ticker-content">
+                                @Model.Title
+                            </div>
                         </div>
                     </div>
 
-                    @if (!string.IsNullOrWhiteSpace(Model.Subtitle))
-                    {
-                        <div class="meta" style="font-size:1.4rem; font-weight:700;">
-                            @Model.Subtitle
-                        </div>
-                    }
 
-                    <div class="column-row">
-                        <div class="meta ticker column-row-ticker">
+                    <div class="column-card-subtitle">
+                        @Model.Subtitle
+                    </div>
+
+                    <div class="column-card-footer">
+
+                        <!-- Ticker -->
+                        <div class="ticker">
                             <div class="ticker-content">
-                                @Model.Footer
+                                @Html.Raw(Model.Ticker)
                             </div>
                         </div>
 
-                        <div class="column-row-footer">
-                            <span class="column-footer-item"></span>
+                        <!-- Timestamp -->
+                        <div class="column-card-timestamp">
+                            @Model.SecondFooter
                         </div>
+
                     </div>
 
                 </div>
 
             </div>
+
         </div>
     </a>
 }
 else
 {
-    <div class="column-card compact column-retry-card" data-id="@id" style="cursor:pointer;">
-        <div style="display:flex; gap:1rem; align-items:flex-start;">
+    <!-- ERROR CARD -->
+    <div class="column-card error"
+         data-id="@Model.Meta.GetValueOrDefault("id")">
 
+        <div class="column-card-inner">
+
+            <!-- Image placeholder -->
             <div>
-                <div class="text-muted" style="width:80px; height:80px; background:#eee;
-                    display:flex; align-items:center; justify-content:center; border-radius:6px;">
+                <div class="column-card-noimage">
                     No Image
                 </div>
             </div>
 
-            <div style="flex:1;">
-                <div class="column-card-title">Error. Click to Retry</div>
-
-                <div class="meta" style="font-size:1.4rem; font-weight:700;">
-                    @Model.Subtitle
+            <!-- Content -->
+            <div class="column-card-content">
+                <div class="column-card-error-message">
+                    Error. Click to Retry
                 </div>
+                <div style="height:1rem;"></div>
+
             </div>
 
         </div>
+
     </div>
 }
