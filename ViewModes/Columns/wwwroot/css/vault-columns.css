@@ -44,6 +44,7 @@
     width: 100%;
     display: block;
     box-sizing: border-box;
+
 }
 
 /* -------------------------------------------------- */
@@ -123,6 +124,7 @@
 
 .column-card-error-message {
     font-size: 1rem;
+    text-align: center;
     font-weight: 700;
     color: #b33;
     margin: auto 0;
@@ -132,13 +134,14 @@
 .column-card-noimage {
     width: 80px;
     height: 80px;
-    background: #eee;
+    background: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 6px;
     color: #666;
     font-size: 0.8rem;
+    opacity: 50%;
 }
 
 /* Title ticker window */

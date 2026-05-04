@@ -1,4 +1,4 @@
-﻿namespace GrimsVault.Models
+﻿namespace Vault.Features.Cex
 {
     /// <summary>
     /// Class represents a single "Box" item from the CEX API. Each Box represents a single purchasable item

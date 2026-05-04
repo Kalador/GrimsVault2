@@ -11,7 +11,24 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="ViewModes\Columns\wwwroot\css\vault-columns.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="ViewModes\Columns\wwwroot\css\vault-columns.css" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="C:\Users\User\source\repos\Kalador\Vault\.editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="wwwroot\favicon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\favicon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

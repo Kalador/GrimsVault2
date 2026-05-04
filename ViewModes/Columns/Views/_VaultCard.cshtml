@@ -36,25 +36,20 @@
                         </div>
                     </div>
 
-
                     <div class="column-card-subtitle">
                         @Model.Subtitle
                     </div>
 
                     <div class="column-card-footer">
-
-                        <!-- Ticker -->
                         <div class="ticker">
                             <div class="ticker-content">
                                 @Html.Raw(Model.Ticker)
                             </div>
                         </div>
 
-                        <!-- Timestamp -->
                         <div class="column-card-timestamp">
                             @Model.SecondFooter
                         </div>
-
                     </div>
 
                 </div>
@@ -66,29 +61,30 @@
 }
 else
 {
-    <!-- ERROR CARD -->
-    <div class="column-card error"
-         data-id="@Model.Meta.GetValueOrDefault("id")">
+    <a class="card-link retry"
+               href="javascript:void(0)"
+               onclick="retryCard('@Model.Meta.GetValueOrDefault("id")')">
 
-        <div class="column-card-inner">
 
-            <!-- Image placeholder -->
-            <div>
+
+        <div class="column-card error"
+             data-id="@Model.Meta.GetValueOrDefault("id")">
+
+            <div class="column-card-inner">
+
                 <div class="column-card-noimage">
                     No Image
                 </div>
-            </div>
 
-            <!-- Content -->
-            <div class="column-card-content">
-                <div class="column-card-error-message">
-                    Error. Click to Retry
+                <div class="column-card-content">
+                    <div class="column-card-error-message">
+                        Error.<br /> Click to Retry
+                    </div>
                 </div>
-                <div style="height:1rem;"></div>
 
             </div>
 
         </div>
+    </a>
 
-    </div>
 }

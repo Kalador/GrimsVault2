@@ -1,6 +1,7 @@
 ﻿@model Vault.Core.Internal.PageContentModel
-<link rel="stylesheet" href="/ViewModes/Columns/css/vault-columns.css" />
-
+@{
+    Layout = "_Layout";
+}
 
 <div class="columns">
     @foreach (var group in Model.Items.GroupBy(i => i.Group))
@@ -15,4 +16,3 @@
         </div>
     }
 </div>
-

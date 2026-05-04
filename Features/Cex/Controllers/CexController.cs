@@ -6,6 +6,11 @@ namespace Vault.Features.Cex;
 [Route("cex")]
 public class CexController(CexService cexService) : Controller
 {
+    // ------------------------------------------------------------
+    // Initial GET request.
+    // Loads the generic loader page, which will POST back to this
+    // controller to fetch the actual ViewMode content.
+    // ------------------------------------------------------------
     [HttpGet("")]
     public IActionResult Index()
     {
@@ -17,12 +22,14 @@ public class CexController(CexService cexService) : Controller
         });
     }
 
-    /// <summary>
-    /// Action returns the current cached CEX Stock, displaying all details.
-    /// </summary>
+    // ------------------------------------------------------------
+    // Loader POST entry point.
+    // Dispatches to the correct loader action based on the header.
+    // ------------------------------------------------------------
     [HttpPost("")]
     [LoaderAction]
-    public async Task<IActionResult> NotioIndexPost([FromHeader(Name = "X-Loader-Action")] string action)
+    public async Task<IActionResult> NotioIndexPost(
+        [FromHeader(Name = "X-Loader-Action")] string action)
     {
         return action.ToLower() switch
         {
@@ -31,11 +38,13 @@ public class CexController(CexService cexService) : Controller
         };
     }
 
+    // ------------------------------------------------------------
+    // Main loader action.
+    // ------------------------------------------------------------
     private async Task<IActionResult> LoadCEXItems()
     {
         var model = await cexService.GetItemsWithCacheAsync();
 
-        // Define the desired column order (v1 behaviour)
         var groupOrder = new Dictionary<string, int>
         {
             ["Priority Stock"] = 0,
@@ -43,15 +52,33 @@ public class CexController(CexService cexService) : Controller
             ["Out of Stock"] = 2
         };
 
-        // Reorder the items BEFORE the ViewMode sees them
         model.Items = [.. model.Items
             .OrderBy(i => groupOrder.TryGetValue(i.Group, out var order) ? order : 99)
-            .ThenBy(i => i.HasError ? 1 : 0)   // errors always last within the group
+            .ThenBy(i => i.HasError ? 1 : 0)
             .ThenBy(i => i.Title)];
 
-        
+        // Render the ViewMode and return HTML + assets
+        return await ViewModeResult.BuildAsync(
+            this,
+            cexService.DefaultViewMode,
+            model
 
-        return View(cexService.DefaultViewMode.PartialView, model);
+
+        );
     }
 
+    // ------------------------------------------------------------
+    // Retry endpoint.
+    // Returns a single card partial with updated API Data
+    // ------------------------------------------------------------
+    [HttpPost("retry")]
+    public async Task<IActionResult> Retry([FromQuery] string id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return BadRequest("Missing id");
+
+        var card = await cexService.BuildSingleCardAsync(id);
+
+        return PartialView("_VaultCard", card);
+    }
 }
