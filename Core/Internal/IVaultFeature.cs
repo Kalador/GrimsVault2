@@ -1,5 +1,4 @@
-﻿using Vault.ViewModes;
-namespace Vault.Core;
+﻿namespace Vault.Core;
 
 /// <summary>
 /// All services added by modular features MUST implement this interface to be enumerated and registered by the VaultService.

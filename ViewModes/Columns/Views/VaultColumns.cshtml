@@ -11,7 +11,7 @@
 
             @foreach (var item in group)
             {
-                @await Html.PartialAsync("_VaultCard.cshtml", item)
+                @await Html.PartialAsync("/ViewModes/Columns/Views/_VaultCard.cshtml", item)
             }
         </div>
     }

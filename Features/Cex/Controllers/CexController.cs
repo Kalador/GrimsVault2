@@ -4,13 +4,19 @@ using Vault.Core;
 namespace Vault.Features.Cex;
 
 [Route("cex")]
-public class CexController(CexService cexService) : Controller
+public class CexController : Controller
 {
-    // ------------------------------------------------------------
-    // Initial GET request.
-    // Loads the generic loader page, which will POST back to this
-    // controller to fetch the actual ViewMode content.
-    // ------------------------------------------------------------
+    private readonly CexService _cexService;
+    private readonly VaultViewMode _viewMode;
+
+    public CexController(CexService cexService)
+    {
+        _cexService = cexService;
+
+        // Default for now — but this is where theme switching will plug in later
+        _viewMode = cexService.DefaultViewMode;
+    }
+
     [HttpGet("")]
     public IActionResult Index()
     {
@@ -22,10 +28,6 @@ public class CexController(CexService cexService) : Controller
         });
     }
 
-    // ------------------------------------------------------------
-    // Loader POST entry point.
-    // Dispatches to the correct loader action based on the header.
-    // ------------------------------------------------------------
     [HttpPost("")]
     [LoaderAction]
     public async Task<IActionResult> NotioIndexPost(
@@ -38,12 +40,9 @@ public class CexController(CexService cexService) : Controller
         };
     }
 
-    // ------------------------------------------------------------
-    // Main loader action.
-    // ------------------------------------------------------------
     private async Task<IActionResult> LoadCEXItems()
     {
-        var model = await cexService.GetItemsWithCacheAsync();
+        var model = await _cexService.GetItemsWithCacheAsync();
 
         var groupOrder = new Dictionary<string, int>
         {
@@ -57,28 +56,27 @@ public class CexController(CexService cexService) : Controller
             .ThenBy(i => i.HasError ? 1 : 0)
             .ThenBy(i => i.Title)];
 
-        // Render the ViewMode and return HTML + assets
         return await ViewModeResult.BuildAsync(
             this,
-            cexService.DefaultViewMode,
+            _viewMode,
             model
-
-
         );
     }
 
-    // ------------------------------------------------------------
-    // Retry endpoint.
-    // Returns a single card partial with updated API Data
-    // ------------------------------------------------------------
     [HttpPost("retry")]
     public async Task<IActionResult> Retry([FromQuery] string id)
     {
         if (string.IsNullOrWhiteSpace(id))
             return BadRequest("Missing id");
 
-        var card = await cexService.BuildSingleCardAsync(id);
+        var card = await _cexService.BuildSingleCardAsync(id);
 
-        return PartialView("_VaultCard", card);
+        var html = await ViewRenderer.RenderAsync(
+            this,
+            _viewMode.CardPartialPath,
+            card
+        );
+
+        return Content(html, "text/html");
     }
 }

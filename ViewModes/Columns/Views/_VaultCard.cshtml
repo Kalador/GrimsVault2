@@ -5,7 +5,8 @@
     <a class="card-link" href="@Model.Url" target="_blank">
         <div class="column-card"
              data-id="@Model.Meta.GetValueOrDefault("id")"
-             data-group="@Model.Group">
+             data-group="@Model.Group"
+             data-title="@Model.Title">
 
             <div class="column-card-inner">
 
@@ -62,13 +63,12 @@
 else
 {
     <a class="card-link retry"
-               href="javascript:void(0)"
-               onclick="retryCard('@Model.Meta.GetValueOrDefault("id")')">
-
-
+           href="javascript:void(0)"
+           onclick="retryCard('@Model.Meta.GetValueOrDefault("id")')">
 
         <div class="column-card error"
-             data-id="@Model.Meta.GetValueOrDefault("id")">
+             data-id="@Model.Meta.GetValueOrDefault("id")"
+             data-title="@Model.Title">
 
             <div class="column-card-inner">
 
@@ -86,5 +86,4 @@ else
 
         </div>
     </a>
-
 }

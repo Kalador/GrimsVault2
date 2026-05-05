@@ -1,16 +1,15 @@
-﻿using Vault.Core;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using Vault.Core;
 using Vault.Core.Internal;
 using Vault.ViewModes;
+using Vault.Features; // <-- to access VaultFeatureBase
 
 namespace Vault.Features.Cex;
 
-/// <summary>
-/// Service for the CEX feature. This service is responsible for handling all CEX-API related operations and interactions with the VaultService.
-/// </summary>
-public class CexService(VaultService vault) : IVaultFeature
+public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
 {
     private string cacheFile => "cex_cache.json";
-    private static readonly HttpClient http = new();
 
     private class Meta : IVaultFeatureMetaData
     {
@@ -52,8 +51,7 @@ public class CexService(VaultService vault) : IVaultFeature
             var id = item.CexID ?? "";
             cache.TryGetValue(id, out var box);
 
-            var card = BuildCardFromBox(id, item.Name ?? "(no name)", box);
-            model.Items.Add(card);
+            model.Items.Add(BuildCardFromBox(id, item.Name ?? "(no name)", box));
         }
 
         return model;
@@ -65,13 +63,11 @@ public class CexService(VaultService vault) : IVaultFeature
     public async Task<PageContentItem> BuildSingleCardAsync(string id)
     {
         var box = await RefreshSingleAsync(id);
-
-        // We do NOT have the VaultItem.Name here, so fallback to "(no name)"
         return BuildCardFromBox(id, "(no name)", box);
     }
 
     // ------------------------------------------------------------
-    // CARD MAPPING (USED BY BOTH MAIN LOAD + RETRY)
+    // CARD MAPPING (UNCHANGED)
     // ------------------------------------------------------------
     private PageContentItem BuildCardFromBox(string id, string fallbackName, CexBox? box)
     {
@@ -96,7 +92,6 @@ public class CexService(VaultService vault) : IVaultFeature
             }
         };
 
-        // Grouping logic
         if (box == null || box.HasError)
         {
             card.Group = "Out of Stock";
@@ -109,12 +104,9 @@ public class CexService(VaultService vault) : IVaultFeature
                     store.Contains(p, StringComparison.OrdinalIgnoreCase)))
             .ToList();
 
-        bool hasPriority = localStores.Count != 0;
-        bool hasAnyStock = box.StoresInStock.Count != 0;
-
-        if (hasPriority)
+        if (localStores.Any())
             card.Group = "Priority Stock";
-        else if (hasAnyStock)
+        else if (box.StoresInStock.Any())
             card.Group = "Other Stock";
         else
             card.Group = "Out of Stock";
@@ -122,53 +114,66 @@ public class CexService(VaultService vault) : IVaultFeature
         return card;
     }
 
-    // ------------------------------------------------------------
-    // SINGLE ITEM REFRESH (USED BY RETRY ENDPOINT)
-    // ------------------------------------------------------------
     private async Task<CexBox?> RefreshSingleAsync(string id)
     {
-        try
+        return await TryAsync(async () =>
         {
-            var detailUrl = $"https://wss2.cex.uk.webuy.io/v3/boxes/{id}/detail";
-            var detail = await http.GetFromJsonAsync<CexDetailResponse>(detailUrl);
+            // 1. DETAIL
+            var detail = await GetJsonAsync<CexDetailResponse>(
+                $"https://wss2.cex.uk.webuy.io/v3/boxes/{id}/detail"
+            );
 
-            if (detail?.Data == null)
+            var d = detail?.Response?.Data?.BoxDetails?.FirstOrDefault();
+            if (d == null)
                 return BuildErrorBox(id, "No detail data");
 
-            var stockUrl = $"https://wss2.cex.uk.webuy.io/v3/boxes/{id}/availability";
-            var stock = await http.GetFromJsonAsync<CexStockResponse>(stockUrl);
-
-            if (stock?.Data == null)
-                return BuildErrorBox(id, "No stock data");
-
+            // 2. Build the base box from DETAIL only
             var box = new CexBox
             {
                 BoxId = id,
-                BoxName = detail.Data.BoxName,
-                ImageUrl = detail.Data.ImageUrls?.FirstOrDefault(),
-                SellPrice = detail.Data.SellPrice,
-                CashPrice = detail.Data.CashPrice,
-                ExchangePrice = detail.Data.ExchangePrice,
-                StockOnline = stock.Data.OnlineStock,
-                StockInStore = stock.Data.Stores.Sum(s => s.Quantity),
-                StoresInStock = stock.Data.Stores
-                    .Select(s => $"{s.StoreName} ({s.Quantity})")
-                    .ToList(),
+                BoxName = d.BoxName,
+                ImageUrl = d.ImageUrls?.Large,
+                SellPrice = d.SellPrice,
+                CashPrice = d.CashPrice,
+                ExchangePrice = d.ExchangePrice,
+                StockOnline = d.EcomQuantityOnHand,
+                StockInStore = 0,
+                StoresInStock = new List<string>(),
                 LastRefreshed = DateTime.UtcNow,
                 HasError = false
             };
 
+            // 3. If detail says out of stock → skip stock API entirely
+            if (d.OutOfStock == 1)
+            {
+                UpdateCache(id, box);
+                return box;
+            }
+
+            // 4. Otherwise → enrich with store stock
+            var stock = await GetJsonAsync<CexStockResponse>(
+                $"https://wss2.cex.uk.webuy.io/v3/boxes/{id}/stock"
+            );
+
+            var stockDetails = stock?.Response?.Data?.StockDetails
+                               ?? new List<CexStockStore>();
+
+            box.StockInStore = stockDetails.Sum(x => x.Quantity);
+            box.StoresInStock = stockDetails
+                .Where(x => x.Quantity > 0)
+                .Select(x => $"{x.StoreName} ({x.Quantity})")
+                .ToList();
+
             UpdateCache(id, box);
             return box;
-        }
-        catch
-        {
-            return BuildErrorBox(id, "Exception");
-        }
+
+        },
+        () => BuildErrorBox(id, "Exception"));
     }
 
+
     // ------------------------------------------------------------
-    // CACHE UPDATE
+    // CACHE UPDATE (UNCHANGED)
     // ------------------------------------------------------------
     private void UpdateCache(string id, CexBox box)
     {
@@ -181,7 +186,7 @@ public class CexService(VaultService vault) : IVaultFeature
     }
 
     // ------------------------------------------------------------
-    // ERROR BOX BUILDER
+    // ERROR BOX (UNCHANGED)
     // ------------------------------------------------------------
     private static CexBox BuildErrorBox(string id, string reason)
     {
@@ -202,7 +207,7 @@ public class CexService(VaultService vault) : IVaultFeature
     }
 
     // ------------------------------------------------------------
-    // TICKER BUILDER
+    // TICKER BUILDER (UNCHANGED)
     // ------------------------------------------------------------
     private string BuildTicker(CexBox? box)
     {
@@ -221,20 +226,16 @@ public class CexService(VaultService vault) : IVaultFeature
             .ToList();
 
         foreach (var store in priority)
-        {
-            parts.Add(
-                $"<span class='status-badge' style='background-color:#d4edda; color:#155724;'>{store}</span>"
-            );
-        }
+            parts.Add($"<span class='status-badge' style='background-color:#d4edda; color:#155724;'>{store}</span>");
 
-        var nonPriorityCount = box.StoresInStock.Count - priority.Count;
+        var nonPriority = box.StoresInStock.Count - priority.Count;
 
-        if (priority.Count > 0)
+        if (priority.Any())
         {
-            if (nonPriorityCount == 1)
+            if (nonPriority == 1)
                 parts.Add("1 Other Store");
-            else if (nonPriorityCount > 1)
-                parts.Add($"{nonPriorityCount} Other Stores");
+            else if (nonPriority > 1)
+                parts.Add($"{nonPriority} Other Stores");
         }
         else
         {
@@ -244,43 +245,98 @@ public class CexService(VaultService vault) : IVaultFeature
                 parts.Add($"{box.StoresInStock.Count} Stores");
         }
 
-        if (parts.Count == 0)
-            return "<span class='text-muted'>Out of Stock</span>";
-
-        return string.Join(", ", parts);
+        return parts.Count == 0
+            ? "<span class='text-muted'>Out of Stock</span>"
+            : string.Join(", ", parts);
     }
 
     // ------------------------------------------------------------
-    // API RESPONSE MODELS (SELF-CONTAINED)
+    // CEX API MODELS (UNCHANGED)
     // ------------------------------------------------------------
     private class CexDetailResponse
     {
-        public CexDetailData? Data { get; set; }
+        [JsonPropertyName("response")]
+        public CexDetailEnvelope? Response { get; set; }
+    }
+
+    private class CexDetailEnvelope
+    {
+        [JsonPropertyName("data")]
+        public CexDetailDataWrapper? Data { get; set; }
+    }
+
+    private class CexDetailDataWrapper
+    {
+        [JsonPropertyName("boxDetails")]
+        public List<CexDetailData>? BoxDetails { get; set; }
     }
 
     private class CexDetailData
     {
+        [JsonPropertyName("boxId")]
+        public string? BoxId { get; set; }
+
+        [JsonPropertyName("boxName")]
         public string? BoxName { get; set; }
-        public List<string>? ImageUrls { get; set; }
+
+        [JsonPropertyName("sellPrice")]
         public decimal SellPrice { get; set; }
+
+        [JsonPropertyName("cashPrice")]
         public decimal CashPrice { get; set; }
+
+        [JsonPropertyName("exchangePrice")]
         public decimal ExchangePrice { get; set; }
+
+        [JsonPropertyName("ecomQuantityOnHand")]
+        public int EcomQuantityOnHand { get; set; }
+
+        [JsonPropertyName("imageUrls")]
+        public CexImageUrls? ImageUrls { get; set; }
+
+        [JsonPropertyName("outOfStock")]
+        public int OutOfStock { get; set; }
+
+    }
+
+    private class CexImageUrls
+    {
+        [JsonPropertyName("large")]
+        public string? Large { get; set; }
+
+        [JsonPropertyName("medium")]
+        public string? Medium { get; set; }
+
+        [JsonPropertyName("small")]
+        public string? Small { get; set; }
     }
 
     private class CexStockResponse
     {
+        [JsonPropertyName("response")]
+        public CexStockEnvelope? Response { get; set; }
+    }
+
+    private class CexStockEnvelope
+    {
+        [JsonPropertyName("data")]
         public CexStockData? Data { get; set; }
     }
 
     private class CexStockData
     {
-        public int OnlineStock { get; set; }
-        public List<CexStoreEntry> Stores { get; set; } = new();
+        [JsonPropertyName("stockDetails")]
+        public List<CexStockStore> StockDetails { get; set; } = new();
     }
 
-    private class CexStoreEntry
+    private class CexStockStore
     {
+        [JsonPropertyName("storeName")]
         public string StoreName { get; set; } = "";
-        public int Quantity { get; set; }
+
+        [JsonPropertyName("quantityOnHand")]
+        public string QuantityOnHand { get; set; } = "0";
+
+        public int Quantity => int.TryParse(QuantityOnHand, out var q) ? q : 0;
     }
 }

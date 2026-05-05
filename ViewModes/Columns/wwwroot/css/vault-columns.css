@@ -20,6 +20,7 @@
     text-align: center;
 }
 
+
 /* -------------------------------------------------- */
 /* CARD LINK                                           */
 /* -------------------------------------------------- */
@@ -29,6 +30,7 @@
     color: inherit;
 }
 
+
 /* -------------------------------------------------- */
 /* CARD CONTAINER                                      */
 /* -------------------------------------------------- */
@@ -37,15 +39,36 @@
     background: #fff;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
-    padding: 0.35rem 0.5rem; /* moved from inline */
+    padding: 0.35rem 0.5rem;
     margin-bottom: 1rem;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     min-height: 80px;
     width: 100%;
     display: block;
     box-sizing: border-box;
-
 }
+
+    /* Loading state (grey-out + block clicks) */
+    .column-card.loading {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    /* Flash highlight after refresh */
+    .column-card.refreshed {
+        animation: flash 0.6s ease-out;
+    }
+
+@keyframes flash {
+    0% {
+        background-color: rgba(255,255,0,0.4);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
 
 /* -------------------------------------------------- */
 /* CARD INNER LAYOUT                                   */
@@ -65,6 +88,7 @@
     min-height: 80px;
 }
 
+
 /* -------------------------------------------------- */
 /* TITLE + SUBTITLE                                    */
 /* -------------------------------------------------- */
@@ -79,6 +103,22 @@
     font-weight: 700;
     margin-bottom: 0.15rem;
 }
+
+/* Title ticker window */
+.column-card-title-ticker {
+    max-width: 100%;
+    overflow: hidden;
+    display: block;
+}
+
+/* Title ticker text */
+.column-card-title .ticker-content {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+    line-height: 1.2;
+}
+
 
 /* -------------------------------------------------- */
 /* FOOTER (TICKER + TIMESTAMP)                         */
@@ -95,7 +135,7 @@
 .column-card .ticker {
     flex: 1;
     overflow: hidden;
-    max-width: 80%; /* your chosen width */
+    max-width: 80%;
     margin-right: 0.25rem;
 }
 
@@ -109,6 +149,7 @@
     color: #777;
     white-space: nowrap;
 }
+
 
 /* -------------------------------------------------- */
 /* ERROR CARD                                          */
@@ -130,7 +171,11 @@
     margin: auto 0;
 }
 
-/* No-image placeholder */
+
+/* -------------------------------------------------- */
+/* IMAGE PLACEHOLDER                                   */
+/* -------------------------------------------------- */
+
 .column-card-noimage {
     width: 80px;
     height: 80px;
@@ -144,18 +189,35 @@
     opacity: 50%;
 }
 
-/* Title ticker window */
-.column-card-title-ticker {
-    max-width: 100%;
-    overflow: hidden;
-    display: block;
+
+/* -------------------------------------------------- */
+/* RETRY LOADING SPINNER                               */
+/* -------------------------------------------------- */
+
+.retry-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    width:100%;
 }
 
-/* Title ticker text (restores old look) */
-.column-card-title .ticker-content {
-    font-size: 1rem; /* restore original title size */
-    font-weight: 600; /* same as before */
-    color: #333; /* restore original title color */
-    line-height: 1.2;
+    .retry-loading .spinner {
+        width: 24px;
+        height: 24px;
+        border: 3px solid #ffcccc; /* pale red background ring */
+        border-top-color: #8b0000; /* DARK RED spinner arc */
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+.column-card.loading .column-card-inner {
+    align-items: center;
+    justify-content: center;
 }
 
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

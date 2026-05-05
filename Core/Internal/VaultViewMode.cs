@@ -1,43 +1,45 @@
-﻿namespace Vault.Core
+﻿using System.Reflection;
+
+namespace Vault.Core
 {
     /// <summary>
-    /// Base type for all Vault ViewModes.
-    ///
-    /// Each ViewMode is a drop-in module located under:
-    ///     /ViewModes/{Name}/
-    ///
-    /// A ViewMode defines:
-    /// - Its name
-    /// - Its view path
-    /// - Its own CSS/JS assets (optional)
-    ///
-    /// Assets are loaded dynamically by the client when the ViewMode is activated.
+    /// Minimal contract for a ViewMode.
     /// </summary>
-    public abstract class VaultViewMode(string name, string viewName)
+    public abstract class VaultViewMode(string name)
     {
+        /// <summary>
+        /// Unique identifier for this ViewMode.
+        /// Used for registration, theme switching, and discovery.
+        /// </summary>
         public string Name { get; } = name;
-        public string ViewName { get; } = viewName;
-
-        public string Folder => $"/ViewModes/{Name}";
-        public string View => $"{Folder}/Views/{ViewName}";
 
         /// <summary>
-        /// Optional JavaScript files required by this ViewMode.
-        /// Paths should be absolute (e.g., "/ViewModes/Columns/js/columns.js").
+        /// Absolute virtual path to the main .cshtml file.
+        /// </summary>
+        public abstract string ViewPath { get; }
+
+        /// <summary>
+        /// Absolute virtual path to the card partial.
+        /// Required so retry actions can render cards consistently.
+        /// </summary>
+        public abstract string CardPartialPath { get; }
+
+        /// <summary>
+        /// Optional CSS files.
+        /// </summary>
+        public virtual IReadOnlyList<string> Styles => [];
+
+        /// <summary>
+        /// Optional JS files.
         /// </summary>
         public virtual IReadOnlyList<string> Scripts => [];
 
-        /// <summary>
-        /// Optional CSS files required by this ViewMode.
-        /// Paths should be absolute (e.g., "/ViewModes/Columns/css/vault-columns.css").
-        /// </summary>
-        public virtual IReadOnlyList<string> Styles => [];
+        public static string CacheBust => Assembly.GetExecutingAssembly().GetName().Version?.ToString()  ?? DateTime.UtcNow.Ticks.ToString();
     }
 
     public static class VaultViewModes
     {
         private static readonly List<VaultViewMode> _all = new();
-
         public static IReadOnlyList<VaultViewMode> All => _all;
 
         internal static void Register(VaultViewMode mode) => _all.Add(mode);

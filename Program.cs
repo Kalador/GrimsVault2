@@ -13,16 +13,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddNotion();
 //------------------------------------------------------------------------------------------------------------------
 
-// MVC and Razor view configuration
-// Enables modular view discovery so each feature can contain its own Views folder.
-builder.Services.AddControllersWithViews();
-builder.Services.Configure<RazorViewEngineOptions>(options =>
-{
-    options.ViewLocationFormats.Clear();
-    options.ViewLocationFormats.Add("/Features/{1}/Views/{0}.cshtml");
-    options.ViewLocationFormats.Add("/Features/{1}/Views/Shared/{0}.cshtml");
-    options.ViewLocationFormats.Add("/Core/Views/{0}.cshtml");
-    options.ViewLocationFormats.Add("/Core/Views/Shared/{0}.cshtml");
+    // MVC and Razor view configuration
+    // Enables modular view discovery so each feature can contain its own Views folder.
+    builder.Services.AddControllersWithViews();
+    builder.Services.Configure<RazorViewEngineOptions>(options =>
+    {
+        options.ViewLocationFormats.Clear();
+        options.ViewLocationFormats.Add("/Features/{1}/Views/{0}.cshtml");
+        options.ViewLocationFormats.Add("/Features/{1}/Views/Shared/{0}.cshtml");
+        options.ViewLocationFormats.Add("/Core/Views/{0}.cshtml");
+        options.ViewLocationFormats.Add("/Core/Views/Shared/{0}.cshtml");
 });
 
 // Load root configuration files
