@@ -5,6 +5,7 @@ using static Vault.Features.Cex.CexApiModels;
 
 namespace Vault.Features.Cex;
 
+//TODO: This class is doing a lot and could be split up into smaller services – e.g. separate the email report logic from the core data refresh and caching logic.
 public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
 {
     private static string CacheFile => "cex_cache.json";
@@ -19,6 +20,7 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
     public string Status() => "CEX Feature OK";
     public VaultViewMode DefaultViewMode => ColumnsViewMode.Instance;
 
+    //TODO: Pull Priority Stores from DataHandler config instead of hardcoding here
     private readonly string[] priorityStores = new[] { "Leeds" };
 
     // ------------------------------------------------------------
@@ -184,6 +186,7 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
     // ------------------------------------------------------------
     // ERROR BOX
     // ------------------------------------------------------------
+    //TODO: reason parameter is currently unused – could be logged or surfaced in the UI for better visibility... or deleted if unnecessary
     private static CexBox BuildErrorBox(string id, string reason)
     {
         return new CexBox
@@ -204,6 +207,7 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
 
     // ------------------------------------------------------------
     // TICKER BUILDER
+    // TODO: Drop the stock counts and just show store names with badges for priority stores?
     // ------------------------------------------------------------
     private string BuildTicker(CexBox? box)
     {
@@ -387,8 +391,8 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
             .Select(MapToEmailItem)
             .ToList();
 
-        var html = EmailBuilder.BuildDailyCexHtmlEmail(emailItems, "CeX stock report");
-        var subject = EmailBuilder.BuildDailyCexHtmlSubject() + " (FULL)";
+        var html = CexEmailBuilder.BuildDailyCexHtmlEmail(emailItems, "CeX stock report");
+        var subject = CexEmailBuilder.BuildDailyCexHtmlSubject() + " (FULL)";
 
         await vault.Email.SendHtmlEmailAsync(subject, html);
 
@@ -447,8 +451,8 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
             .Select(MapToEmailItem)
             .ToList();
 
-        var html = EmailBuilder.BuildDailyCexHtmlEmail(emailItems, "");
-        var subject = EmailBuilder.BuildDailyCexHtmlSubject();
+        var html = CexEmailBuilder.BuildDailyCexHtmlEmail(emailItems, "");
+        var subject = CexEmailBuilder.BuildDailyCexHtmlSubject();
 
         await vault.Email.SendHtmlEmailAsync(subject, html);
 

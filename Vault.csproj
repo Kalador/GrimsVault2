@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ToDoList.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EditorConfigFiles Remove="C:\Users\User\source\repos\Kalador\Vault\.editorconfig" />
   </ItemGroup>
 
@@ -20,6 +24,7 @@
 
   <ItemGroup>
     <None Include="C:\Users\User\source\repos\Kalador\Vault\.editorconfig" />
+    <None Include="ToDoList.cs" />
   </ItemGroup>
 
   <ItemGroup>

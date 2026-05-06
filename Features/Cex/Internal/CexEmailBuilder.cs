@@ -2,7 +2,7 @@
 
 namespace Vault.Features.Cex;
 
-public static class EmailBuilder
+public static class CexEmailBuilder
 {
     public static string BuildDailyCexHtmlSubject()
     {
