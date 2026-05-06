@@ -1,4 +1,5 @@
-﻿using Vault.Data;
+﻿using Microsoft.Extensions.Configuration;
+using Vault.Data;
 
 namespace Vault.Core;
 
@@ -7,22 +8,45 @@ namespace Vault.Core;
 /// It is responsible for managing the lifecycle of all features and services, and for
 /// providing a single point of access to the Vault's functionality.
 /// </summary>
-/// <param name="data">An instance of IDataHandler</param>
-public partial class VaultService(IDataHandler data)
+public partial class VaultService
 {
+    private readonly IDataHandler _data;
+
+    /// <summary>
+    /// Provides access to the VaultCache. Callers can access feature-specific caches through this property.
+    /// The VaultCache is a singleton that is shared across all features and services.
+    /// </summary>
+    public VaultCache Cache { get; } = new VaultCache();
+
+    /// <summary>
+    /// Provides access to the Core Email Sender. Features can call vault.Email.SendHtmlEmailAsync(...)
+    /// to send HTML emails using the configured SMTP credentials.
+    /// </summary>
+    public EmailSender Email { get; }
+
     /// <summary>
     /// Checks the status of the VaultService and returns a simple string indicating that it is operational.
     /// </summary>
     public string Status() => "VaultService OK";
 
-    /// <summary>
-    /// Provices access to the VaultCache. Callers can access feature-specific caches through this property.
-    /// The VaultCache is a singleton that is shared across all features and services.
-    /// </summary>
-    public VaultCache Cache { get; } = new VaultCache();
+    // ------------------------------------------------------------
+    // CONSTRUCTOR
+    // ------------------------------------------------------------
+    public VaultService(IDataHandler data, IConfiguration config)
+    {
+        _data = data;
 
+        var smtpUser = config["Email:SmtpUser"] ?? "";
+        var smtpPass = config["Email:SmtpPass"] ?? "";
+        var smtpHost = config["Email:SmtpHost"] ?? "smtp.gmail.com";
+        var smtpPort = int.TryParse(config["Email:SmtpPort"], out var p) ? p : 587;
 
+        var recipients = config
+            .GetSection("Email:Recipients")
+            .Get<string[]>()
+            ?? [];
 
-
+        Email = new EmailSender(smtpUser, smtpPass, smtpHost, smtpPort, recipients);
+    }
 
 }

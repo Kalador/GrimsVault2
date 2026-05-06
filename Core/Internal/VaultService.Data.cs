@@ -6,6 +6,6 @@ public partial class VaultService
 
     public async Task<List<VaultItem>> GetItems(QueryDefinition? query = null, int? pageSize = null)
     {
-        return await data.GetItemsAsync(query, pageSize);
+        return await _data.GetItemsAsync(query, pageSize);
     }
 }

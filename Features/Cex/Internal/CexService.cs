@@ -1,15 +1,13 @@
-﻿using System.Text.Json;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using Vault.Core;
 using Vault.Core.Internal;
-using Vault.ViewModes;
-using Vault.Features; // <-- to access VaultFeatureBase
+using static Vault.Features.Cex.CexApiModels;
 
 namespace Vault.Features.Cex;
 
 public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
 {
-    private string cacheFile => "cex_cache.json";
+    private static string CacheFile => "cex_cache.json";
 
     private class Meta : IVaultFeatureMetaData
     {
@@ -41,8 +39,8 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
         });
 
         var cache = vault.Cache
-            .ReadCache<Dictionary<string, CexBox>>(cacheFile)
-            ?? new Dictionary<string, CexBox>();
+            .ReadCache<Dictionary<string, CexBox>>(CacheFile)
+            ?? [];
 
         var model = new PageContentModel();
 
@@ -67,7 +65,7 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
     }
 
     // ------------------------------------------------------------
-    // CARD MAPPING (UNCHANGED)
+    // CARD MAPPING
     // ------------------------------------------------------------
     private PageContentItem BuildCardFromBox(string id, string fallbackName, CexBox? box)
     {
@@ -114,11 +112,13 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
         return card;
     }
 
+    // ------------------------------------------------------------
+    // SINGLE ITEM REFRESH
+    // ------------------------------------------------------------
     private async Task<CexBox?> RefreshSingleAsync(string id)
     {
         return await TryAsync(async () =>
         {
-            // 1. DETAIL
             var detail = await GetJsonAsync<CexDetailResponse>(
                 $"https://wss2.cex.uk.webuy.io/v3/boxes/{id}/detail"
             );
@@ -127,7 +127,6 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
             if (d == null)
                 return BuildErrorBox(id, "No detail data");
 
-            // 2. Build the base box from DETAIL only
             var box = new CexBox
             {
                 BoxId = id,
@@ -143,14 +142,12 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
                 HasError = false
             };
 
-            // 3. If detail says out of stock → skip stock API entirely
             if (d.OutOfStock == 1)
             {
                 UpdateCache(id, box);
                 return box;
             }
 
-            // 4. Otherwise → enrich with store stock
             var stock = await GetJsonAsync<CexStockResponse>(
                 $"https://wss2.cex.uk.webuy.io/v3/boxes/{id}/stock"
             );
@@ -171,22 +168,21 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
         () => BuildErrorBox(id, "Exception"));
     }
 
-
     // ------------------------------------------------------------
-    // CACHE UPDATE (UNCHANGED)
+    // CACHE UPDATE
     // ------------------------------------------------------------
     private void UpdateCache(string id, CexBox box)
     {
         var cache = vault.Cache
-            .ReadCache<Dictionary<string, CexBox>>(cacheFile)
+            .ReadCache<Dictionary<string, CexBox>>(CacheFile)
             ?? new Dictionary<string, CexBox>();
 
         cache[id] = box;
-        vault.Cache.WriteCache(cacheFile, cache);
+        vault.Cache.WriteCache(CacheFile, cache);
     }
 
     // ------------------------------------------------------------
-    // ERROR BOX (UNCHANGED)
+    // ERROR BOX
     // ------------------------------------------------------------
     private static CexBox BuildErrorBox(string id, string reason)
     {
@@ -207,7 +203,7 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
     }
 
     // ------------------------------------------------------------
-    // TICKER BUILDER (UNCHANGED)
+    // TICKER BUILDER
     // ------------------------------------------------------------
     private string BuildTicker(CexBox? box)
     {
@@ -251,92 +247,360 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
     }
 
     // ------------------------------------------------------------
-    // CEX API MODELS (UNCHANGED)
+    // CACHE HELPERS FOR CRON
     // ------------------------------------------------------------
-    private class CexDetailResponse
+    private Dictionary<string, CexBox> ReadCache()
     {
-        [JsonPropertyName("response")]
-        public CexDetailEnvelope? Response { get; set; }
+        return vault.Cache
+            .ReadCache<Dictionary<string, CexBox>>(CacheFile)
+            ?? new Dictionary<string, CexBox>();
     }
 
-    private class CexDetailEnvelope
+    private IEnumerable<string> GetMissing(IEnumerable<string> ids)
     {
-        [JsonPropertyName("data")]
-        public CexDetailDataWrapper? Data { get; set; }
+        var cache = ReadCache();
+        return ids.Where(id => !cache.ContainsKey(id));
     }
 
-    private class CexDetailDataWrapper
+    private IEnumerable<CexBox> GetOldest(int count)
     {
-        [JsonPropertyName("boxDetails")]
-        public List<CexDetailData>? BoxDetails { get; set; }
+        var cache = ReadCache();
+
+        return cache.Values
+            .OrderBy(b => b.LastRefreshed)
+            .Take(count);
     }
 
-    private class CexDetailData
+    // ------------------------------------------------------------
+    // REFRESH SUMMARY MODEL
+    // ------------------------------------------------------------
+    public record RefreshSummary(
+        int Processed,
+        int Success,
+        int Failed,
+        List<string> Lines
+    )
     {
-        [JsonPropertyName("boxId")]
-        public string? BoxId { get; set; }
+        public string ToPlainText()
+        {
+            var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
 
-        [JsonPropertyName("boxName")]
-        public string? BoxName { get; set; }
-
-        [JsonPropertyName("sellPrice")]
-        public decimal SellPrice { get; set; }
-
-        [JsonPropertyName("cashPrice")]
-        public decimal CashPrice { get; set; }
-
-        [JsonPropertyName("exchangePrice")]
-        public decimal ExchangePrice { get; set; }
-
-        [JsonPropertyName("ecomQuantityOnHand")]
-        public int EcomQuantityOnHand { get; set; }
-
-        [JsonPropertyName("imageUrls")]
-        public CexImageUrls? ImageUrls { get; set; }
-
-        [JsonPropertyName("outOfStock")]
-        public int OutOfStock { get; set; }
-
+            return
+                $"CeX refresh at {timestamp} UTC\n" +
+                $"Processed: {Processed}\n" +
+                $"Success: {Success}\n" +
+                $"Failed: {Failed}\n" +
+                $"Items:\n" +
+                string.Join("\n", Lines);
+        }
     }
 
-    private class CexImageUrls
+    // ------------------------------------------------------------
+    // ATOMIC REFRESH WRAPPER
+    // ------------------------------------------------------------
+    private async Task<(bool ok, CexBox? box)> RefreshAtomicAsync(string id)
     {
-        [JsonPropertyName("large")]
-        public string? Large { get; set; }
-
-        [JsonPropertyName("medium")]
-        public string? Medium { get; set; }
-
-        [JsonPropertyName("small")]
-        public string? Small { get; set; }
+        var box = await RefreshSingleAsync(id);
+        return (box != null && !box.HasError, box);
     }
 
-    private class CexStockResponse
+    // ------------------------------------------------------------
+    // ROLLING REFRESH (CRON)
+    // ------------------------------------------------------------
+    public async Task<RefreshSummary> RefreshRollingAsync(int count = 6)
     {
-        [JsonPropertyName("response")]
-        public CexStockEnvelope? Response { get; set; }
+        var items = await vault.GetItems(new QueryDefinition
+        {
+            Filters =
+            {
+                new QueryFilter
+                {
+                    Property = "CEX Product Code",
+                    Operator = QueryOperator.NotEmpty
+                }
+            }
+        });
+
+        var ids = items
+            .Select(i => i.CexID!)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .ToList();
+
+        var missing = GetMissing(ids).Take(count).ToList();
+        var refreshList = new List<string>(missing);
+
+        if (refreshList.Count < count)
+        {
+            var needed = count - refreshList.Count;
+            var oldest = GetOldest(needed)
+                .Where(b => !refreshList.Contains(b.BoxId!))
+                .Select(b => b.BoxId!)
+                .ToList();
+
+            refreshList.AddRange(oldest);
+        }
+
+        int success = 0;
+        int fail = 0;
+        var lines = new List<string>();
+
+        foreach (var id in refreshList)
+        {
+            var (ok, box) = await RefreshAtomicAsync(id);
+
+            if (ok)
+            {
+                success++;
+                lines.Add($"{id}: OK");
+            }
+            else
+            {
+                fail++;
+                lines.Add($"{id}: FAIL");
+            }
+        }
+
+        return new RefreshSummary(
+            Processed: refreshList.Count,
+            Success: success,
+            Failed: fail,
+            Lines: lines
+        );
     }
 
-    private class CexStockEnvelope
+    // ------------------------------------------------------------
+    // EMAIL REPORT – FULL (ALL LOCAL STOCK)
+    // ------------------------------------------------------------
+    public async Task<string> SendFullReportAsync()
     {
-        [JsonPropertyName("data")]
-        public CexStockData? Data { get; set; }
+        var cache = ReadCache();
+
+        var boxes = cache.Values
+            .Where(HasLocalStock)
+            .OrderByDescending(b => b.LastRefreshed)
+            .ToList();
+
+        if (!boxes.Any())
+            return "No local stock";
+
+        var emailItems = boxes
+            .Select(MapToEmailItem)
+            .ToList();
+
+        var html = EmailBuilder.BuildDailyCexHtmlEmail(emailItems, "CeX stock report");
+        var subject = EmailBuilder.BuildDailyCexHtmlSubject() + " (FULL)";
+
+        await vault.Email.SendHtmlEmailAsync(subject, html);
+
+        var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+
+        return
+            $"CeX full report at {timestamp} UTC\n" +
+            $"Items: {boxes.Count}";
     }
 
-    private class CexStockData
+    // ------------------------------------------------------------
+    // EMAIL REPORT – UPDATED (CHANGES ONLY)
+    // ------------------------------------------------------------
+    public async Task<string> SendUpdatedReportAsync()
     {
-        [JsonPropertyName("stockDetails")]
-        public List<CexStockStore> StockDetails { get; set; } = new();
+        var cache = ReadCache();
+
+        int processed = 0;
+        int included = 0;
+        var lines = new List<string>();
+        var changedBoxes = new List<CexBox>();
+
+        foreach (var kvp in cache)
+        {
+            var id = kvp.Key;
+            var box = kvp.Value;
+
+            processed++;
+
+            var localStores = GetLocalStoresForBox(box);
+            if (!localStores.Any())
+            {
+                lines.Add($"{id}: SKIP (no local stock)");
+                continue;
+            }
+
+            if (ShouldReportChange(box, localStores))
+            {
+                included++;
+                lines.Add($"{id}: CHANGED");
+
+                UpdateReportSnapshot(id, box, localStores);
+                changedBoxes.Add(box);
+            }
+            else
+            {
+                lines.Add($"{id}: NO CHANGE");
+            }
+        }
+
+        if (!changedBoxes.Any())
+            return "No changes";
+
+        var emailItems = changedBoxes
+            .OrderByDescending(b => b.LastRefreshed)
+            .Select(MapToEmailItem)
+            .ToList();
+
+        var html = EmailBuilder.BuildDailyCexHtmlEmail(emailItems, "");
+        var subject = EmailBuilder.BuildDailyCexHtmlSubject();
+
+        await vault.Email.SendHtmlEmailAsync(subject, html);
+
+        var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+
+        return
+            $"CeX updated report at {timestamp} UTC\n" +
+            $"Processed: {processed}\n" +
+            $"Included: {included}\n" +
+            $"Items:\n" +
+            string.Join("\n", lines);
     }
 
-    private class CexStockStore
+    // ------------------------------------------------------------
+    // EMAIL REPORT HELPERS
+    // ------------------------------------------------------------
+    private IEnumerable<CexEmailItem> BuildEmailItemsFromCache()
     {
-        [JsonPropertyName("storeName")]
-        public string StoreName { get; set; } = "";
+        var cache = ReadCache();
 
-        [JsonPropertyName("quantityOnHand")]
-        public string QuantityOnHand { get; set; } = "0";
+        return cache.Values
+            .Where(HasLocalStock)
+            .OrderByDescending(b => b.LastRefreshed)
+            .Select(MapToEmailItem);
+    }
 
-        public int Quantity => int.TryParse(QuantityOnHand, out var q) ? q : 0;
+    private CexEmailItem MapToEmailItem(CexBox box)
+    {
+        return new CexEmailItem
+        {
+            BoxName = box.BoxName ?? "(no name)",
+            SellPriceFormatted = FormatPrice(box.SellPrice),
+            StockSummaryHtml = BuildStockSummaryHtml(box),
+            LastScanAge = FormatAge(box.LastRefreshed),
+            CexUrl = BuildCexUrl(box.BoxId),
+            ImageUrl = box.ImageUrl
+        };
+    }
+
+    private static string FormatPrice(decimal price)
+    {
+        return price % 1 == 0
+            ? price.ToString("0")
+            : price.ToString("0.00");
+    }
+
+    private static string FormatAge(DateTime timestamp)
+    {
+        if (timestamp == DateTime.MinValue)
+            return "never";
+
+        var diff = DateTime.UtcNow - timestamp.ToUniversalTime();
+
+        if (diff.TotalSeconds < 60)
+            return "just now";
+
+        if (diff.TotalMinutes < 60)
+            return $"{(int)diff.TotalMinutes} mins";
+
+        if (diff.TotalHours < 24)
+            return $"{(int)diff.TotalHours} hrs";
+
+        if (diff.TotalDays < 7)
+            return $"{(int)diff.TotalDays} days";
+
+        return timestamp.ToLocalTime().ToString("dd/MM/yy");
+    }
+
+    private string BuildStockSummaryHtml(CexBox box)
+    {
+        if (box.HasError)
+            return "<span class='text-muted'>Error loading stock</span>";
+
+        var localStores = GetLocalStoresForBox(box);
+
+        if (box.StockOnline == 0 && !localStores.Any())
+            return "<span class='text-muted'>No stock</span>";
+
+        var parts = new List<string>();
+
+        if (box.StockOnline > 0)
+            parts.Add($"Online: {box.StockOnline}");
+
+        if (localStores.Any())
+            parts.Add(string.Join(", ", localStores));
+
+        return string.Join(" • ", parts);
+    }
+
+    private static string BuildCexUrl(string? boxId)
+    {
+        if (string.IsNullOrWhiteSpace(boxId))
+            return "https://uk.webuy.com";
+
+        return $"https://uk.webuy.com/product-detail?id={boxId}";
+    }
+
+    private bool HasLocalStock(CexBox box)
+    {
+        return GetLocalStoresForBox(box).Any();
+    }
+
+    private List<string> GetLocalStoresForBox(CexBox box)
+    {
+        var stores = box.StoresInStock ?? new List<string>();
+
+        return stores
+            .Where(store =>
+                priorityStores.Any(p =>
+                    store.Contains(p, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+    }
+
+    private bool ShouldReportChange(CexBox box, List<string> currentLocalStores)
+    {
+        var firstTime = box.LastReportedAt == null;
+
+        var priceChanged =
+            box.LastReportedPrice == null ||
+            box.LastReportedPrice.Value != box.SellPrice;
+
+        var previousStores = box.LastReportedLocalStores ?? new List<string>();
+
+        var storesChanged = !NormalizeStores(previousStores)
+            .SequenceEqual(NormalizeStores(currentLocalStores));
+
+        var previouslyHadStock = previousStores.Any();
+        var currentlyHasStock = currentLocalStores.Any();
+
+        var regainedStock = !previouslyHadStock && currentlyHasStock;
+        var lostStock = previouslyHadStock && !currentlyHasStock;
+
+        return firstTime
+               || priceChanged
+               || storesChanged
+               || regainedStock
+               || lostStock;
+    }
+
+    private static IEnumerable<string> NormalizeStores(IEnumerable<string> stores)
+    {
+        return stores
+            .Select(s => s.Trim().ToLowerInvariant())
+            .OrderBy(s => s);
+    }
+
+    private void UpdateReportSnapshot(string id, CexBox box, List<string> localStores)
+    {
+        box.LastReportedPrice = box.SellPrice;
+        box.LastReportedLocalStores = localStores;
+        box.LastReportedAt = DateTime.UtcNow;
+
+        UpdateCache(id, box);
     }
 }

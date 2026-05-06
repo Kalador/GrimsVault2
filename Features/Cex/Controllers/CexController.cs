@@ -4,18 +4,9 @@ using Vault.Core;
 namespace Vault.Features.Cex;
 
 [Route("cex")]
-public class CexController : Controller
+public class CexController(CexService cexService) : Controller
 {
-    private readonly CexService _cexService;
-    private readonly VaultViewMode _viewMode;
-
-    public CexController(CexService cexService)
-    {
-        _cexService = cexService;
-
-        // Default for now — but this is where theme switching will plug in later
-        _viewMode = cexService.DefaultViewMode;
-    }
+    private readonly VaultViewMode _viewMode = cexService.DefaultViewMode;
 
     [HttpGet("")]
     public IActionResult Index()
@@ -40,9 +31,46 @@ public class CexController : Controller
         };
     }
 
+    /// <summary>
+    /// Triggers automatic refresh of the CEX stock data, limited to 6 items per run.
+    /// </summary>
+    [HttpGet("update")]
+    public async Task<IActionResult> Update()
+    {
+        var summary = await cexService.RefreshRollingAsync(6);
+        return Content(summary.ToPlainText());
+    }
+
+    // ------------------------------------------------------------
+    // NEW: REPORT ENDPOINTS (CRON)
+    // ------------------------------------------------------------
+
+    /// <summary>
+    /// Sends a FULL CeX stock report (all local stock).
+    /// </summary>
+    [HttpGet("report/full")]
+    public async Task<IActionResult> ReportFull()
+    {
+        var summary = await cexService.SendFullReportAsync();
+        return Content(summary);
+    }
+
+    /// <summary>
+    /// Sends an INCREMENTAL CeX stock report (changes only).
+    /// </summary>
+    [HttpGet("report/incremental")]
+    public async Task<IActionResult> ReportIncremental()
+    {
+        var summary = await cexService.SendUpdatedReportAsync();
+        return Content(summary);
+    }
+
+    // ------------------------------------------------------------
+    // INTERNAL: LOAD UI ITEMS
+    // ------------------------------------------------------------
     private async Task<IActionResult> LoadCEXItems()
     {
-        var model = await _cexService.GetItemsWithCacheAsync();
+        var model = await cexService.GetItemsWithCacheAsync();
 
         var groupOrder = new Dictionary<string, int>
         {
@@ -63,13 +91,16 @@ public class CexController : Controller
         );
     }
 
+    // ------------------------------------------------------------
+    // RETRY SINGLE CARD
+    // ------------------------------------------------------------
     [HttpPost("retry")]
     public async Task<IActionResult> Retry([FromQuery] string id)
     {
         if (string.IsNullOrWhiteSpace(id))
             return BadRequest("Missing id");
 
-        var card = await _cexService.BuildSingleCardAsync(id);
+        var card = await cexService.BuildSingleCardAsync(id);
 
         var html = await ViewRenderer.RenderAsync(
             this,
