@@ -9,6 +9,8 @@ namespace Vault.Core
     /// </summary>
     public class VaultCache
     {
+        private static readonly object GlobalWriteLock = new();
+
         private const string RootPath = "App_Data";
         private readonly ConcurrentDictionary<string, object> _fileLocks = new();
 
@@ -73,12 +75,14 @@ namespace Vault.Core
             var path = Path.Combine(RootPath, filename);
             var fileLock = _fileLocks.GetOrAdd(path, _ => new object());
 
-            lock (fileLock)
-            {
-                var json = JsonSerializer.Serialize(data, JsonOptions);
-                File.WriteAllText(path, json);
-            }
+            lock (GlobalWriteLock) // <— NEW: global write lock
+                lock (fileLock)        // <— existing per-file lock
+                {
+                    var json = JsonSerializer.Serialize(data, JsonOptions);
+                    File.WriteAllText(path, json);
+                }
         }
+
 
         /// <summary>
         /// Basic merge support:
@@ -105,12 +109,63 @@ namespace Vault.Core
 
             return incoming;
         }
+
+        // =====================================================================
+        // JSON CACHE WRAPPER (LOAD ONCE → MUTATE → SAVE)
+        // =====================================================================
+
+        /// <summary>
+        /// Strongly‑typed JSON cache wrapper.
+        /// Loads once, mutates in memory, saves once.
+        /// </summary>
+        public sealed class JsonCache<T>
+        {
+            private readonly VaultCache vaultCache;
+            private readonly string filename;
+            private readonly Func<T, string> keySelector;
+            private readonly Dictionary<string, T> data;
+
+            /// <summary>
+            /// Creates a typed JSON cache wrapper.
+            /// keySelector must return a stable unique key for each T.
+            /// </summary>
+            public JsonCache(VaultCache vaultCache, string filename, Func<T, string> keySelector)
+            {
+                this.vaultCache = vaultCache;
+                this.filename = filename;
+                this.keySelector = keySelector;
+
+                data = vaultCache.ReadCache<Dictionary<string, T>>(filename)
+                       ?? new Dictionary<string, T>();
+            }
+
+            public bool TryGet(string key, out T? value)
+                => data.TryGetValue(key, out value);
+
+            public void Set(string key, T value)
+                => data[key] = value;
+
+            public void Set(T value)
+                => data[keySelector(value)] = value;
+
+            public void Prune(IEnumerable<string> validKeys)
+            {
+                var valid = new HashSet<string>(validKeys);
+
+                foreach (var key in data.Keys.ToList())
+                {
+                    if (!valid.Contains(key))
+                        data.Remove(key);
+                }
+            }
+
+            public IEnumerable<T> Values => data.Values;
+
+            public void Save()
+                => vaultCache.WriteCache(filename, data);
+        }
     }
 
-    /// <summary>
-    /// Overwrite = replace file (default).
-    /// Merge = load existing and merge before writing.
-    /// </summary>
     public enum CacheWriteMode
     {
         Overwrite = 0,

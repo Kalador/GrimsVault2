@@ -5,7 +5,7 @@ using static Vault.Features.Cex.CexApiModels;
 
 namespace Vault.Features.Cex;
 
-//TODO: This class is doing a lot and could be split up into smaller services – e.g. separate the email report logic from the core data refresh and caching logic.
+
 public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
 {
     private static string CacheFile => "cex_cache.json";
@@ -207,47 +207,58 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
 
     // ------------------------------------------------------------
     // TICKER BUILDER
-    // TODO: Drop the stock counts and just show store names with badges for priority stores?
     // ------------------------------------------------------------
     private string BuildTicker(CexBox? box)
     {
         if (box == null || box.HasError)
             return "<span class='text-muted'>Out of Stock</span>";
 
+        var stores = box.StoresInStock ?? new List<string>();
+
+        bool hasOnline = box.StockOnline > 0;
+
+        // Split stores into priority + other
+        var priority = new List<string>();
+        int otherCount = 0;
+
+        foreach (var store in stores)
+        {
+            if (priorityStores.Any(p =>
+                store.Contains(p, StringComparison.OrdinalIgnoreCase)))
+            {
+                priority.Add(store);
+            }
+            else
+            {
+                otherCount++;
+            }
+        }
+
+        // Build output parts
         var parts = new List<string>();
 
-        if (box.StockOnline > 0)
+        if (hasOnline)
             parts.Add("Online");
 
-        var priority = box.StoresInStock
-            .Where(store =>
-                priorityStores.Any(p =>
-                    store.Contains(p, StringComparison.OrdinalIgnoreCase)))
-            .ToList();
-
+        // Priority stores with badges
         foreach (var store in priority)
-            parts.Add($"<span class='status-badge' style='background-color:#d4edda; color:#155724;'>{store}</span>");
-
-        var nonPriority = box.StoresInStock.Count - priority.Count;
-
-        if (priority.Any())
         {
-            if (nonPriority == 1)
-                parts.Add("1 Other Store");
-            else if (nonPriority > 1)
-                parts.Add($"{nonPriority} Other Stores");
-        }
-        else
-        {
-            if (box.StoresInStock.Count == 1)
-                parts.Add("1 Store");
-            else if (box.StoresInStock.Count > 1)
-                parts.Add($"{box.StoresInStock.Count} Stores");
+            parts.Add(
+                $"<span class='status-badge' style='background-color:#d4edda; color:#155724;'>{store}</span>"
+            );
         }
 
-        return parts.Count == 0
-            ? "<span class='text-muted'>Out of Stock</span>"
-            : string.Join(", ", parts);
+        // Summary of other stores
+        if (otherCount == 1)
+            parts.Add("and 1 other store");
+        else if (otherCount > 1)
+            parts.Add($"and {otherCount} other stores");
+
+        // If nothing at all
+        if (!hasOnline && priority.Count == 0 && otherCount == 0)
+            return "<span class='text-muted'>Out of Stock</span>";
+
+        return string.Join(", ", parts);
     }
 
     // ------------------------------------------------------------

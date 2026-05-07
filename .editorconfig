@@ -10,6 +10,10 @@ root = true
 dotnet_diagnostic.IDE0130.severity = none #Stop pissing about namespace conventions
 dotnet_diagnostic.IDE0160.severity = none #Stop pissing about namespace conventions
 
+dotnet_compute_task_list_items_for_closed_files=true #Find the tasks, ffs
+
+
+
 
 
 # Indentation and spacing
