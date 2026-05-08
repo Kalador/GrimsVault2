@@ -15,7 +15,7 @@
     /// </summary>
     public class QueryDefinition
     {
-        public List<QueryFilter> Filters { get; set; } = new();
+        public List<QueryFilter> Filters { get; set; } = [];
     }
 
     /// <summary>

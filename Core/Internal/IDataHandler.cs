@@ -10,10 +10,21 @@ namespace Vault.Data
         /// <summary>
         /// Request a list of VaultItem objects with a specified limit.
         /// </summary>
-        /// <param name="pageSize">PageSize for results. If null, uses default file from Notion appsettings.</param>
+        /// <param name="pageSize">PageSize for results.</param>
         /// <param name="query">Optional QueryDefinition to filter results.</param>
         /// <returns>A list of VaultItem objects.</returns>
         Task<List<VaultItem>> GetItemsAsync(QueryDefinition? query = null,int? pageSize = null);
+
+        /// <summary>
+        /// Requests a list of store definitions from the Stores database.
+        /// </summary>
+        /// <param name="query">Optional QueryDefinition to filter results.</param>
+        /// <param name="pageSize">Optional page size.</param>
+        /// <returns>A list of IVaultStore objects representing all matching stores.</returns>
+        Task<List<VaultStore>> GetStoresAsync(
+            QueryDefinition? query = null,
+            int? pageSize = null);
+
 
     }
 }

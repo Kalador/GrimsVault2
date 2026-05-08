@@ -10,20 +10,31 @@ public class CexReportHandler
     public async Task<string> SendFullReportAsync(
         VaultService vault,
         Dictionary<string, CexBox> cache,
-        Func<CexBox, bool> hasLocalStock
+        Func<CexBox, Task<bool>> hasLocalStock,
+        Func<CexBox, Task<string>> buildStockSummary
     )
     {
-        var boxes = cache.Values
-            .Where(hasLocalStock)
+        var boxes = new List<CexBox>();
+
+        foreach (var box in cache.Values)
+        {
+            if (await hasLocalStock(box))
+                boxes.Add(box);
+        }
+
+        boxes = boxes
             .OrderByDescending(b => b.LastRefreshed)
             .ToList();
 
         if (!boxes.Any())
             return "No local stock";
 
-        var emailItems = boxes
-            .Select(MapToEmailItem)
-            .ToList();
+        var emailItems = new List<CexEmailItem>();
+
+        foreach (var box in boxes)
+        {
+            emailItems.Add(MapToEmailItem(box, await buildStockSummary(box)));
+        }
 
         var html = CexEmailBuilder.BuildDailyCexHtmlEmail(emailItems, "CeX stock report");
         var subject = CexEmailBuilder.BuildDailyCexHtmlSubject() + " (FULL)";
@@ -43,7 +54,8 @@ public class CexReportHandler
     public async Task<string> SendUpdatedReportAsync(
         VaultService vault,
         Dictionary<string, CexBox> cache,
-        Func<CexBox, List<string>> getLocalStoresForBox
+        Func<CexBox, Task<List<string>>> getLocalStoresForBox,
+        Func<CexBox, Task<string>> buildStockSummary
     )
     {
         int processed = 0;
@@ -58,7 +70,7 @@ public class CexReportHandler
 
             processed++;
 
-            var localStores = getLocalStoresForBox(box);
+            var localStores = await getLocalStoresForBox(box);
             if (!localStores.Any())
             {
                 lines.Add($"{id}: SKIP (no local stock)");
@@ -82,10 +94,13 @@ public class CexReportHandler
         if (!changedBoxes.Any())
             return "No changes";
 
-        var emailItems = changedBoxes
-            .OrderByDescending(b => b.LastRefreshed)
-            .Select(MapToEmailItem)
-            .ToList();
+        var emailItems = new List<CexEmailItem>();
+
+        foreach (var box in changedBoxes
+            .OrderByDescending(b => b.LastRefreshed))
+        {
+            emailItems.Add(MapToEmailItem(box, await buildStockSummary(box)));
+        }
 
         var html = CexEmailBuilder.BuildDailyCexHtmlEmail(emailItems, "");
         var subject = CexEmailBuilder.BuildDailyCexHtmlSubject();
@@ -105,39 +120,17 @@ public class CexReportHandler
     // ------------------------------------------------------------
     // EMAIL MAPPING
     // ------------------------------------------------------------
-    private CexEmailItem MapToEmailItem(CexBox box)
+    private CexEmailItem MapToEmailItem(CexBox box, string stockSummaryHtml)
     {
         return new CexEmailItem
         {
             BoxName = box.BoxName ?? "(no name)",
             SellPriceFormatted = box.SellPrice.FormatPrice(),
-            StockSummaryHtml = BuildStockSummaryHtml(box),
+            StockSummaryHtml = stockSummaryHtml,
             LastScanAge = box.LastRefreshed.FormatAge(),
             CexUrl = CexHelpers.BuildCexUrl(box.BoxId),
             ImageUrl = box.ImageUrl
         };
-    }
-
-    private static string BuildStockSummaryHtml(CexBox box)
-    {
-        if (box.HasError)
-            return "<span class='text-muted'>Error loading stock</span>";
-
-        var hasOnlineStock = box.StockOnline > 0;
-        var hasStoreStock = box.StoresInStock?.Any() == true;
-
-        if (!hasOnlineStock && !hasStoreStock)
-            return "<span class='text-muted'>No stock</span>";
-
-        var parts = new List<string>();
-
-        if (box.StockOnline > 0)
-            parts.Add($"Online: {box.StockOnline}");
-
-        if (box.StoresInStock?.Any() == true)
-            parts.Add(string.Join(", ", box.StoresInStock));
-
-        return string.Join(" • ", parts);
     }
 
     // ------------------------------------------------------------
@@ -151,7 +144,7 @@ public class CexReportHandler
             box.LastReportedPrice == null ||
             box.LastReportedPrice.Value != box.SellPrice;
 
-        var previousStores = box.LastReportedLocalStores ?? new List<string>();
+        var previousStores = box.LastReportedLocalStores ?? [];
 
         var storesChanged = !NormalizeStores(previousStores)
             .SequenceEqual(NormalizeStores(currentLocalStores));

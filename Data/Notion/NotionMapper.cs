@@ -15,6 +15,25 @@ namespace Vault.Data.Notion
     internal static class NotionMapper
     {
         /// <summary>
+        /// Converts a Notion page JSON object into a <see cref="VaultStore"/>.
+        /// </summary>
+        /// <param name="page">The JSON element representing the Notion page.</param>
+        /// <returns>A fully populated <see cref="VaultStore"/> instance.</returns>
+        public static VaultStore MapVaultStore(JsonElement page)
+        {
+            var props = page.GetProperty("properties");
+
+            return new VaultStore
+            {
+                Name = NotionParser.ExtractTitle(props, "Name") ?? "",
+                StoreType = NotionParser.ExtractSelectName(props, "StoreType") ?? "",
+                IsPriority = NotionParser.ExtractCheckbox(props, "Priority"),
+                Region = NotionParser.ExtractSelectName(props, "Region"),
+                Number = NotionParser.ExtractNumber(props, "Number")
+            };
+        }
+
+        /// <summary>
         /// Converts a Notion page JSON object into a <see cref="VaultItem"/>.
         /// </summary>
         public static VaultItem MapVaultItem(JsonElement page)

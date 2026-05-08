@@ -1,40 +1,50 @@
-﻿using static Vault.Features.Cex.CexApiModels;
+﻿using Vault.Core;
+using static Vault.Features.Cex.CexApiModels;
 
 namespace Vault.Features.Cex;
 
 /// <summary>
-/// Class represents a single "Box" item from the CEX API. Each Box represents a single purchasable item
+/// Domain model representing a single CeX "Box" item.
+/// Tracks where the item is available, not how many are in stock.
 /// </summary>
 public class CexBox
 {
+    // Identity
     public string? BoxId { get; set; }
     public string? BoxName { get; set; }
+
+    // Pricing
     public decimal CashPrice { get; set; }
     public decimal ExchangePrice { get; set; }
     public decimal SellPrice { get; set; }
-    public int StockOnline { get; set; }
-    public int StockInStore { get; set; }
+
+    // Stock availability (location-based only)
+    public bool IsAvailableOnline { get; set; }
+    public List<string> StoresInStock { get; set; } = [];
+
+    // Media
     public string? ImageUrl { get; set; }
 
+    // Error state
     public bool HasError { get; set; } = false;
 
-    // Unified timestamp for rolling refresh
+    // Refresh tracking
     public DateTime LastRefreshed { get; set; } = DateTime.MinValue;
 
-    public List<string> StoresInStock { get; set; } = new();
-
-    // Last price that was included in a report
+    // Reporting metadata
     public decimal? LastReportedPrice { get; set; }
-
-    // Last set of local stores that were included in a report
-    public List<string> LastReportedLocalStores { get; set; } = new();
-
-    // When this item was last included in a report
+    public List<string> LastReportedLocalStores { get; set; } = [];
     public DateTime? LastReportedAt { get; set; }
 }
 
+/// <summary>
+/// Maps API detail/stock responses into domain models.
+/// </summary>
 internal static class CexBoxMapper
 {
+    /// <summary>
+    /// Creates a CexBox from a detail response.
+    /// </summary>
     public static CexBox FromDetail(string id, CexDetailData d)
     {
         return new CexBox
@@ -45,20 +55,26 @@ internal static class CexBoxMapper
             SellPrice = d.SellPrice,
             CashPrice = d.CashPrice,
             ExchangePrice = d.ExchangePrice,
-            StockOnline = d.EcomQuantityOnHand,
 
-            // Only meaningful non-default assignment
+            // Online availability is binary
+            IsAvailableOnline = d.EcomQuantityOnHand > 0,
+
             LastRefreshed = DateTime.UtcNow
         };
     }
 
+    /// <summary>
+    /// Applies store-level availability to an existing box.
+    /// </summary>
     public static void ApplyStock(CexBox box, IEnumerable<CexStockStore> stockDetails)
     {
-        box.StockInStore = stockDetails.Any(x => x.Quantity > 0) ? 1 : 0;
-
-        box.StoresInStock = stockDetails
-            .Where(x => x.Quantity > 0)
-            .Select(x => x.StoreName)
-            .ToList();
+        box.StoresInStock =
+        [
+            .. stockDetails
+                .Where(x => x.Quantity > 0)
+                .Select(x => x.StoreName)
+        ];
     }
 }
+
+

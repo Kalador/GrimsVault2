@@ -39,7 +39,7 @@ namespace Vault.Core
 
     public static class VaultViewModes
     {
-        private static readonly List<VaultViewMode> _all = new();
+        private static readonly List<VaultViewMode> _all = [];
         public static IReadOnlyList<VaultViewMode> All => _all;
 
         internal static void Register(VaultViewMode mode) => _all.Add(mode);

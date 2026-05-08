@@ -136,7 +136,7 @@ namespace Vault.Core
                 this.keySelector = keySelector;
 
                 data = vaultCache.ReadCache<Dictionary<string, T>>(filename)
-                       ?? new Dictionary<string, T>();
+                       ?? [];
             }
 
             public bool TryGet(string key, out T? value)

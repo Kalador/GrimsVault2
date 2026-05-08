@@ -34,7 +34,7 @@ public class PageContentModel
     /// A flat list of items. Each item carries its own Group string.
     /// ViewModes may group these dynamically (e.g., into columns).
     /// </summary>
-    public List<PageContentItem> Items { get; set; } = new();
+    public List<PageContentItem> Items { get; set; } = [];
 }
 
 /// <summary>

@@ -6,8 +6,6 @@ namespace Vault.Features.Cex;
 public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
 {
     private readonly CexApiClient _api = new();
-
-    // NEW FIELD (allowed under H2)
     private readonly CexReportHandler _reportHandler = new();
 
     private static string CacheFile => "cex_cache.json";
@@ -22,14 +20,54 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
     public string Status() => "CEX Feature OK";
     public VaultViewMode DefaultViewMode => ColumnsViewMode.Instance;
 
-    //TODO: Pull Priority Stores from DataHandler config instead of hardcoding here
-    private readonly string[] priorityStores = ["Leeds"];
+    //Build the priority store list from the vault
+    private List<VaultStore> _priorityStores = [];
+    private bool _storesLoaded = false;
+
+    // ------------------------------------------------------------
+    // STORE NAME NORMALISATION
+    // ------------------------------------------------------------
+    private static string CleanStoreName(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return raw;
+
+        var idx = raw.IndexOf(" (", StringComparison.Ordinal);
+        return idx > 0 ? raw[..idx] : raw;
+    }
+
+    // ------------------------------------------------------------
+    // STORE LOADER (PRIORITY STORES FROM NOTION)
+    // ------------------------------------------------------------
+    private async Task EnsureStoresLoadedAsync()
+    {
+        if (_storesLoaded)
+            return;
+
+        var stores = await vault.GetStores(new QueryDefinition
+        {
+            Filters =
+            {
+                new QueryFilter
+                {
+                    Property = "Priority",
+                    Operator = QueryOperator.Equals,
+                    Value = true
+                }
+            }
+        });
+
+        _priorityStores = stores;
+        _storesLoaded = true;
+    }
 
     // ------------------------------------------------------------
     // MAIN PAGE LOAD (CACHE ONLY)
     // ------------------------------------------------------------
     public async Task<PageContentModel> GetItemsWithCacheAsync()
     {
+        await EnsureStoresLoadedAsync();
+
         var items = await vault.GetItems(new QueryDefinition
         {
             Filters =
@@ -53,7 +91,7 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
             var id = item.CexID ?? "";
             cache.TryGetValue(id, out var box);
 
-            model.Items.Add(BuildCardFromBox(id, item.Name ?? "(no name)", box));
+            model.Items.Add(await BuildCardFromBoxAsync(id, item.Name ?? "(no name)", box));
         }
 
         return model;
@@ -64,21 +102,23 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
     // ------------------------------------------------------------
     public async Task<PageContentItem> BuildSingleCardAsync(string id)
     {
+        await EnsureStoresLoadedAsync();
+
         var box = await RefreshSingleAsync(id);
-        return BuildCardFromBox(id, "(no name)", box);
+        return await BuildCardFromBoxAsync(id, "(no name)", box);
     }
 
     // ------------------------------------------------------------
-    // CARD MAPPING
+    // CARD MAPPING (ASYNC)
     // ------------------------------------------------------------
-    private PageContentItem BuildCardFromBox(string id, string fallbackName, CexBox? box)
+    private async Task<PageContentItem> BuildCardFromBoxAsync(string id, string fallbackName, CexBox? box)
     {
         var card = new PageContentItem
         {
             Title = "🎮 " + (box?.BoxName ?? fallbackName),
             ImageUrl = box?.ImageUrl,
             Subtitle = box?.SellPrice.FormatPrice(),
-            Ticker = BuildTicker(box),
+            Ticker = await BuildTickerAsync(box),
             SecondFooter = "🕒 " + box?.LastRefreshed.FormatAge(),
 
             Url = box != null && !box.HasError
@@ -100,7 +140,7 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
             return card;
         }
 
-        var localStores = GetLocalStoresForBox(box);
+        var localStores = await GetLocalStoresForBoxAsync(box);
 
         if (localStores.Count != 0)
             card.Group = "Priority Stock";
@@ -172,8 +212,6 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
             SellPrice = 0,
             CashPrice = 0,
             ExchangePrice = 0,
-            StockOnline = 0,
-            StockInStore = 0,
             StoresInStock = [],
             LastRefreshed = DateTime.UtcNow,
             HasError = true
@@ -181,27 +219,28 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
     }
 
     // ------------------------------------------------------------
-    // TICKER BUILDER
+    // TICKER BUILDER (ASYNC)
     // ------------------------------------------------------------
-    private string BuildTicker(CexBox? box)
+    private async Task<string> BuildTickerAsync(CexBox? box)
     {
         if (box == null || box.HasError)
             return "<span class='text-muted'>Out of Stock</span>";
 
+        await EnsureStoresLoadedAsync();
+
         var stores = box.StoresInStock ?? [];
 
-        bool hasOnline = box.StockOnline > 0;
-
-        // Split stores into priority + other
         var priority = new List<string>();
         int otherCount = 0;
 
         foreach (var store in stores)
         {
-            if (priorityStores.Any(p =>
-                store.Contains(p, StringComparison.OrdinalIgnoreCase)))
+            var clean = CleanStoreName(store);
+
+            if (_priorityStores.Any(ps =>
+                clean.Equals(ps.Name, StringComparison.OrdinalIgnoreCase)))
             {
-                priority.Add(store);
+                priority.Add(clean);
             }
             else
             {
@@ -209,13 +248,11 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
             }
         }
 
-        // Build output parts
         var parts = new List<string>();
 
-        if (hasOnline)
+        if (box.IsAvailableOnline)
             parts.Add("Online");
 
-        // Priority stores with badges
         foreach (var store in priority)
         {
             parts.Add(
@@ -223,14 +260,12 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
             );
         }
 
-        // Summary of other stores
         if (otherCount == 1)
             parts.Add("and 1 other store");
         else if (otherCount > 1)
             parts.Add($"and {otherCount} other stores");
 
-        // If nothing at all
-        if (!hasOnline && priority.Count == 0 && otherCount == 0)
+        if (!box.IsAvailableOnline && priority.Count == 0 && otherCount == 0)
             return "<span class='text-muted'>Out of Stock</span>";
 
         return string.Join(", ", parts);
@@ -299,6 +334,8 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
     // ------------------------------------------------------------
     public async Task<RefreshSummary> RefreshRollingAsync(int count = 6)
     {
+        await EnsureStoresLoadedAsync();
+
         var items = await vault.GetItems(new QueryDefinition
         {
             Filters =
@@ -363,10 +400,13 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
     // ------------------------------------------------------------
     public async Task<string> SendFullReportAsync()
     {
+        await EnsureStoresLoadedAsync();
+
         return await _reportHandler.SendFullReportAsync(
             vault,
             ReadCache(),
-            HasLocalStock
+            hasLocalStock: HasLocalStockAsync,
+            buildStockSummary: BuildTickerAsync
         );
     }
 
@@ -375,28 +415,36 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
     // ------------------------------------------------------------
     public async Task<string> SendUpdatedReportAsync()
     {
+        await EnsureStoresLoadedAsync();
+
         return await _reportHandler.SendUpdatedReportAsync(
             vault,
             ReadCache(),
-            GetLocalStoresForBox
+            getLocalStoresForBox: GetLocalStoresForBoxAsync,
+            buildStockSummary: BuildTickerAsync
         );
     }
 
     // ------------------------------------------------------------
     // LOCAL STORE FILTERING (UNIQUE TO CexService)
     // ------------------------------------------------------------
-    private bool HasLocalStock(CexBox box)
+    private async Task<bool> HasLocalStockAsync(CexBox box)
     {
-        return GetLocalStoresForBox(box).Count != 0;
+        var local = await GetLocalStoresForBoxAsync(box);
+        return local.Count != 0;
     }
 
-    private List<string> GetLocalStoresForBox(CexBox box)
+    private async Task<List<string>> GetLocalStoresForBoxAsync(CexBox box)
     {
+        await EnsureStoresLoadedAsync();
+
         var stores = box.StoresInStock ?? [];
 
-        return [.. stores
-            .Where(store =>
-                priorityStores.Any(p =>
-                    store.Contains(p, StringComparison.OrdinalIgnoreCase)))];
+        return stores
+            .Select(CleanStoreName)
+            .Where(clean =>
+                _priorityStores.Any(ps =>
+                    clean.Equals(ps.Name, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
     }
 }

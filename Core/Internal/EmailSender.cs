@@ -33,7 +33,7 @@ public class EmailSender
         _smtpPort = smtpPort;
 
         DefaultRecipients = defaultRecipients?.ToList()
-            ?? new List<string>();
+            ?? [];
     }
 
     // ------------------------------------------------------------

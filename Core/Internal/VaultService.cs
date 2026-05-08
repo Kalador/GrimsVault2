@@ -8,7 +8,7 @@ namespace Vault.Core;
 /// It is responsible for managing the lifecycle of all features and services, and for
 /// providing a single point of access to the Vault's functionality.
 /// </summary>
-public partial class VaultService
+public class VaultService
 {
     private readonly IDataHandler _data;
 
@@ -47,6 +47,28 @@ public partial class VaultService
             ?? [];
 
         Email = new EmailSender(smtpUser, smtpPass, smtpHost, smtpPort, recipients);
+    }
+
+    /// <summary>
+    /// Retrieves VaultItems from the data handler.
+    /// Optional <see cref="QueryDefinition"/> applies AND filters.
+    /// </summary>
+    public async Task<List<VaultItem>> GetItems(
+        QueryDefinition? query = null,
+        int? pageSize = null)
+    {
+        return await _data.GetItemsAsync(query, pageSize);
+    }
+
+    /// <summary>
+    /// Retrieves VaultStores from the data handler.
+    /// Optional <see cref="QueryDefinition"/> applies AND filters.
+    /// </summary>
+    public async Task<List<VaultStore>> GetStores(
+        QueryDefinition? query = null,
+        int? pageSize = null)
+    {
+        return await _data.GetStoresAsync(query, pageSize);
     }
 
 }
