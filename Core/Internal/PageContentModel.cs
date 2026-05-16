@@ -49,9 +49,9 @@ public class PageContentItem
     public string Group { get; set; } = "";
 
     /// <summary>
-    /// Primary display text for the card.
+    /// Optional secondary text (e.g., price, platform, category).
     /// </summary>
-    public string Title { get; set; } = "";
+    public string Secondary { get; set; } = "";
 
     /// <summary>
     /// Optional image associated with the card.
@@ -59,9 +59,10 @@ public class PageContentItem
     public string? ImageUrl { get; set; }
 
     /// <summary>
-    /// Optional secondary text (e.g., price, platform, category).
+    /// Primary display text for the card. Could be Name, could be Price.
+    /// User Whatever proeprty is the primary concern of any given feature.
     /// </summary>
-    public string? Subtitle { get; set; }
+    public string? Primary { get; set; }
 
     /// <summary>
     /// Text for a scrolling ticker in the footer.

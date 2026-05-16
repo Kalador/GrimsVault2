@@ -6,7 +6,7 @@
         <div class="column-card"
              data-id="@Model.Meta.GetValueOrDefault("id")"
              data-group="@Model.Group"
-             data-title="@Model.Title">
+             data-title="@Model.Secondary">
 
             <div class="column-card-inner">
 
@@ -15,7 +15,7 @@
                     @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
                     {
                         <img src="@Model.ImageUrl"
-                             alt="@Model.Title"
+                             alt="@Model.Primary"
                              style="height:80px; width:auto; border-radius:6px; display:block;" />
                     }
                     else
@@ -32,13 +32,13 @@
                     <div class="column-card-title">
                         <div class="ticker column-card-title-ticker">
                             <div class="ticker-content">
-                                @Model.Title
+                                @Model.Secondary
                             </div>
                         </div>
                     </div>
 
                     <div class="column-card-subtitle">
-                        @Model.Subtitle
+                        @Model.Primary
                     </div>
 
                     <div class="column-card-footer">
@@ -68,7 +68,7 @@ else
 
         <div class="column-card error"
              data-id="@Model.Meta.GetValueOrDefault("id")"
-             data-title="@Model.Title">
+             data-title="@Model.Secondary">
 
             <div class="column-card-inner">
 

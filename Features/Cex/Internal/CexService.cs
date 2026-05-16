@@ -115,9 +115,9 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
     {
         var card = new PageContentItem
         {
-            Title = "🎮 " + (box?.BoxName ?? fallbackName),
+            Secondary = "🎮 " + (box?.BoxName ?? fallbackName),
             ImageUrl = box?.ImageUrl,
-            Subtitle = box?.SellPrice.FormatPrice(),
+            Primary = box?.SellPrice.FormatPrice(),
             Ticker = await BuildTickerAsync(box),
             SecondFooter = "🕒 " + box?.LastRefreshed.FormatAge(),
 
@@ -261,9 +261,18 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
         }
 
         if (otherCount == 1)
-            parts.Add("and 1 other store");
+        {
+            parts.Add((box.IsAvailableOnline || priority.Count > 0)
+                ? "and 1 other store"
+                : "1 other store");
+        }
         else if (otherCount > 1)
-            parts.Add($"and {otherCount} other stores");
+        {
+            parts.Add((box.IsAvailableOnline || priority.Count > 0)
+                ? $"and {otherCount} other stores"
+                : $"{otherCount} other stores");
+        }
+
 
         if (!box.IsAvailableOnline && priority.Count == 0 && otherCount == 0)
             return "<span class='text-muted'>Out of Stock</span>";

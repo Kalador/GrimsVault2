@@ -1,4 +1,6 @@
-﻿namespace Vault.Core
+﻿using System.Text.RegularExpressions;
+
+namespace Vault.Core
 {
     public static class Helpers
     {
@@ -38,6 +40,33 @@
             return price % 1 == 0
                 ? $"£{price:0}"
                 : $"£{price:0.00}";
+        }
+
+        /// <summary>
+        /// Safely parses a nullable string into a DateTime.
+        /// Returns null if parsing fails.
+        /// </summary>
+        public static DateTime? ToDate(this string? rawDate)
+        {
+            return DateTime.TryParse(rawDate, out var parsed) ? parsed : null;
+        }
+
+        /// <summary>
+        /// Removes HTML Editing from a text block.
+        /// Handy for cleaning Webpage info blocks into plaint text
+        /// </summary>
+        public static string Sanitize(this string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return string.Empty;
+
+            // Strip HTML tags
+            var noHtml = Regex.Replace(input, "<.*?>", string.Empty);
+
+            // Normalize whitespace
+            var normalized = Regex.Replace(noHtml, @"\s+", " ").Trim();
+
+            return normalized;
         }
 
     }

@@ -4,9 +4,12 @@
 
 .columns {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1rem;
 }
+
+
+
 
 .column {
     display: block;
@@ -82,10 +85,12 @@
 }
 
 .column-card-content {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     min-height: 80px;
+
 }
 
 
@@ -96,6 +101,7 @@
 .column-card-title {
     font-weight: 600;
     margin-bottom: 0.1rem;
+    min-width: 0;
 }
 
 .column-card-subtitle {
@@ -106,7 +112,7 @@
 
 /* Title ticker window */
 .column-card-title-ticker {
-    max-width: 100%;
+    max-width: 100% !important;
     overflow: hidden;
     display: block;
 }
@@ -129,19 +135,34 @@
     justify-content: space-between;
     align-items: center;
     margin-top: auto;
+    min-width: 0;
 }
 
 /* ticker width is ViewMode-specific */
 .column-card .ticker {
     flex: 1;
     overflow: hidden;
-    max-width: 80%;
     margin-right: 0.25rem;
+    max-width:80%
 }
 
 .column-card .ticker-content {
     font-size: 0.8rem;
     color: #555;
+}
+
+.ticker {
+    min-width: 0;
+    overflow: hidden;
+    flex-shrink: 1;
+}
+
+.ticker-content {
+    display: block;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .column-card-timestamp {
@@ -221,3 +242,5 @@
         transform: rotate(360deg);
     }
 }
+
+

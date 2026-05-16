@@ -82,7 +82,7 @@ public class CexController(CexService cexService) : Controller
         model.Items = [.. model.Items
             .OrderBy(i => groupOrder.TryGetValue(i.Group, out var order) ? order : 99)
             .ThenBy(i => i.HasError ? 1 : 0)
-            .ThenBy(i => i.Title)];
+            .ThenBy(i => i.Secondary)];
 
         return await ViewModeResult.BuildAsync(
             this,
