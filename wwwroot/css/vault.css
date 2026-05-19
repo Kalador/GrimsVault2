@@ -80,7 +80,7 @@ html, body {
 .btn {
     display: inline-block;
     padding: 0.5rem 1rem;
-    background-color: #343a40;
+    background-color: #007bff;
     color: #fff;
     border: none;
     border-radius: 6px;
@@ -193,4 +193,31 @@ a {
     font-size: 0.85rem;
     color: #666;
     display: block;
+}
+
+
+/* -------------------------------------------------- */
+/* VAULT PAGE HEADER (shared across all viewmodes)     */
+/* -------------------------------------------------- */
+
+.vault-header {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.vault-title {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.vault-pagebuttons {
+    margin-top: 0.5rem;
+    display: inline-flex;
+    gap: 0.5rem;
+}
+
+
+.vault-pagebutton-form {
+    margin: 0;
 }

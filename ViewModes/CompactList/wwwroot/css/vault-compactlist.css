@@ -1,0 +1,106 @@
+﻿.compactlist {
+    padding: 0.5rem 0;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.compactlist-group {
+    margin-bottom: 1rem;
+}
+
+.compactlist-group-header {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #555;
+    padding: 0.25rem 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.compactlist-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    display: block;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.15s ease;
+}
+
+    .compactlist-card:hover {
+        background: #f8f9fa;
+    }
+
+    .compactlist-card.has-error {
+        border: 1px solid #f5c6cb;
+        box-shadow: 0 0 0 2px rgba(220,53,69,0.08);
+    }
+
+        .compactlist-card.has-error:hover {
+            background: #ffecec;
+        }
+
+.item-primary {
+    font-weight: 600;
+    font-size: 1.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.item-status {
+    margin-top: 0.35rem;
+    font-size: 0.85rem;
+}
+
+.badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.badge-error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.badge-ok {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.item-secondary {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.item-ticker {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #444;
+    min-height: 3.5rem;
+    overflow: hidden;
+    text-align: justify;
+}
+
+
+.item-footer {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.compactlist-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    text-decoration: none;
+    color: inherit;
+}

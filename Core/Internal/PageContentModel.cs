@@ -8,7 +8,10 @@
 //
 //  The structure is intentionally generic:
 //      PageContentModel
+//          -> Meta (page-level metadata)
+//          -> PageButtons (global actions)
 //          -> Items (cards)
+//              -> Buttons (per‑item actions)
 //              -> Group (string category assigned by the feature)
 //
 //  ViewModes may interpret groups as:
@@ -25,11 +28,41 @@
 namespace Vault.Core.Internal;
 
 /// <summary>
+/// Represents a clickable UI action. ViewModes render these as buttons.
+/// Features populate them with the text and action URL required.
+/// </summary>
+public class PageContentButton
+{
+    /// <summary>
+    /// The text displayed on the button.
+    /// </summary>
+    public string Text { get; set; } = "";
+
+    /// <summary>
+    /// The URL to POST to when the button is clicked.
+    /// </summary>
+    public string ActionUrl { get; set; } = "";
+}
+
+/// <summary>
 /// Represents the full structured content of a Vault page.
 /// A ViewMode receives this model and decides how to render it.
 /// </summary>
 public class PageContentModel
 {
+    /// <summary>
+    /// Arbitrary metadata for the entire page.
+    /// Features may use this to pass page-level context such as titles,
+    /// subtitles, warnings, or other non-item-specific information.
+    /// </summary>
+    public Dictionary<string, object> Meta { get; set; } = [];
+
+    /// <summary>
+    /// Buttons that apply to the entire page (e.g., Refresh, Search, Apply Filters).
+    /// ViewModes may render these at the top of the page or in a toolbar.
+    /// </summary>
+    public List<PageContentButton> PageButtons { get; set; } = [];
+
     /// <summary>
     /// A flat list of items. Each item carries its own Group string.
     /// ViewModes may group these dynamically (e.g., into columns).
@@ -60,7 +93,7 @@ public class PageContentItem
 
     /// <summary>
     /// Primary display text for the card. Could be Name, could be Price.
-    /// User Whatever proeprty is the primary concern of any given feature.
+    /// Use whatever property is the primary concern of any given feature.
     /// </summary>
     public string? Primary { get; set; }
 
@@ -90,4 +123,10 @@ public class PageContentItem
     /// ViewModes should treat this as optional and defensive.
     /// </summary>
     public Dictionary<string, object> Meta { get; set; } = [];
+
+    /// <summary>
+    /// Buttons that apply to this specific item (e.g., Track, Retry, Apply).
+    /// ViewModes render these inside the card.
+    /// </summary>
+    public List<PageContentButton> Buttons { get; set; } = [];
 }

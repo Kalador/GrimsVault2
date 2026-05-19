@@ -1,0 +1,36 @@
+﻿@model Vault.Core.Internal.PageContentModel
+
+<div class="vault-header">
+
+    @if (Model.Meta.TryGetValue("Title", out var titleObj) && titleObj is string title)
+    {
+        <h2 class="vault-title">@title</h2>
+    }
+
+    @if (Model.PageButtons?.Any() == true)
+    {
+        <div class="vault-pagebuttons">
+            @foreach (var btn in Model.PageButtons)
+            {
+                <form method="post" action="@btn.ActionUrl" class="vault-pagebutton-form">
+                    <button class="btn">@btn.Text</button>
+                </form>
+            }
+        </div>
+    }
+</div>
+
+
+<div class="compactlist">
+    @foreach (var group in Model.Items.GroupBy(i => i.Group))
+    {
+        <div class="compactlist-group" data-group="@group.Key">
+            <div class="compactlist-group-header">@group.Key</div>
+
+            @foreach (var item in group)
+            {
+                @await Html.PartialAsync("/ViewModes/CompactList/Views/_VaultCard.cshtml", item)
+            }
+        </div>
+    }
+</div>

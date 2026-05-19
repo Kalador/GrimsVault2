@@ -1,0 +1,65 @@
+﻿@model Vault.Core.Internal.PageContentItem
+
+<div class="compactlist-card @(Model.HasError ? "has-error" : "")">
+
+    <div class="compactlist-content">
+
+        @if (!string.IsNullOrWhiteSpace(Model.Primary))
+        {
+            <div class="item-primary">
+                @Model.Primary
+            </div>
+        }
+
+        @{
+            string? statusText = null;
+            if (Model.Meta.TryGetValue("status", out var statusObj) &&
+                statusObj is string s &&
+                !string.IsNullOrWhiteSpace(s))
+            {
+                statusText = s;
+            }
+        }
+
+        @if (Model.HasError || !string.IsNullOrWhiteSpace(statusText))
+        {
+            <div class="item-status">
+                @if (Model.HasError)
+                {
+                    <span class="badge badge-error">Error</span>
+                }
+                else
+                {
+                    <span class="badge badge-ok">@statusText</span>
+                }
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.Secondary))
+        {
+            <div class="item-secondary">
+                @Model.Secondary
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.Ticker))
+        {
+            <div class="item-ticker">
+                @Model.Ticker
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.SecondFooter))
+        {
+            <div class="item-footer">
+                @Model.SecondFooter
+            </div>
+        }
+
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Url))
+    {
+        <a href="@Model.Url" class="compactlist-overlay"></a>
+    }
+</div>

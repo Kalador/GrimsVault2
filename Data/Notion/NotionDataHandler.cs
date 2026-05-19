@@ -10,7 +10,7 @@ namespace Vault.Data.Notion
     /// - Apply optional <see cref="QueryDefinition"/> filters
     /// - Apply optional ORDER BY clauses when provided
     /// - Map raw Notion JSON pages into strongly-typed Core models
-    /// - Return <see cref="VaultItem"/> and <see cref="VaultStore"/> collections
+    /// - Update VaultItem records via PATCH operations
     /// 
     /// This class performs no business logic and stores no state beyond configuration.
     /// </summary>
@@ -31,9 +31,6 @@ namespace Vault.Data.Notion
         //  SCHEMA LOADER
         // =====================================================================
 
-        /// <summary>
-        /// Loads the Notion database schema once and caches property types.
-        /// </summary>
         private async Task EnsureSchemaLoadedAsync()
         {
             if (_propertyTypes != null)
@@ -51,7 +48,7 @@ namespace Vault.Data.Notion
         }
 
         // =====================================================================
-        //  ITEMS
+        //  ITEMS (READ)
         // =====================================================================
 
         public async Task<List<VaultItem>> GetItemsAsync(
@@ -78,7 +75,7 @@ namespace Vault.Data.Notion
         }
 
         // =====================================================================
-        //  STORES
+        //  STORES (READ)
         // =====================================================================
 
         public async Task<List<VaultStore>> GetStoresAsync(
@@ -105,7 +102,49 @@ namespace Vault.Data.Notion
         }
 
         // =====================================================================
-        //  PAYLOAD BUILDER
+        //  ITEMS (WRITE)
+        // =====================================================================
+
+        /// <summary>
+        /// Updates a single VaultItem in Notion using a PATCH request.
+        /// Only fields present in the outbound payload are modified.
+        /// </summary>
+        public async Task UpdateItemAsync(VaultItem item)
+        {
+            await EnsureSchemaLoadedAsync();
+
+            var payload = NotionMapper.MapToNotionUpdatePayload(item, _propertyTypes!);
+
+            var endpoint = $"/pages/{item.PageId}";
+            await _client.PatchAsync(endpoint, payload);
+        }
+
+        /// <summary>
+        /// Updates multiple VaultItems in Notion.
+        /// Calls UpdateItemAsync for each item with controlled concurrency.
+        /// </summary>
+        public async Task UpdateItemsAsync(IEnumerable<VaultItem> items)
+        {
+            var semaphore = new SemaphoreSlim(4); // safe concurrency for Notion
+
+            var tasks = items.Select(async item =>
+            {
+                await semaphore.WaitAsync();
+                try
+                {
+                    await UpdateItemAsync(item);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+
+            await Task.WhenAll(tasks);
+        }
+
+        // =====================================================================
+        //  PAYLOAD BUILDER (QUERY)
         // =====================================================================
 
         private object BuildNotionPayload(QueryDefinition query)
@@ -124,38 +163,28 @@ namespace Vault.Data.Notion
                 })
                 .ToList();
 
-            // Build base payload
             var payload = new Dictionary<string, object>
             {
                 ["filter"] = new { and = filters }
             };
 
-            // Only include sorts if non-empty
             if (sorts.Count > 0)
                 payload["sorts"] = sorts;
 
             return payload;
         }
 
-
         // =====================================================================
         //  FILTER BUILDER (SMART TYPE DETECTION)
         // =====================================================================
 
-        /// <summary>
-        /// Converts a <see cref="QueryFilter"/> into a Notion-compatible filter object.
-        /// Automatically detects property type from the Notion schema.
-        /// </summary>
         private object BuildNotionFilter(QueryFilter f)
         {
-            // Determine property type from schema
             var type = _propertyTypes!.TryGetValue(f.Property, out var t)
                 ? t
-                : "rich_text"; // fallback
+                : "rich_text";
 
-            // ------------------------------------------------------------
-            // BOOLEAN SUPPORT (checkbox)
-            // ------------------------------------------------------------
+            // BOOLEAN
             if (f.Value is bool b)
             {
                 return f.Operator switch
@@ -177,9 +206,7 @@ namespace Vault.Data.Notion
                 };
             }
 
-            // ------------------------------------------------------------
-            // DATE PROPERTIES
-            // ------------------------------------------------------------
+            // DATE
             if (type == "date")
             {
                 return f.Operator switch
@@ -213,9 +240,7 @@ namespace Vault.Data.Notion
                 };
             }
 
-            // ------------------------------------------------------------
-            // NUMBER PROPERTIES
-            // ------------------------------------------------------------
+            // NUMBER
             if (type == "number")
             {
                 return f.Operator switch
@@ -249,9 +274,7 @@ namespace Vault.Data.Notion
                 };
             }
 
-            // ------------------------------------------------------------
-            // SELECT / MULTI_SELECT
-            // ------------------------------------------------------------
+            // SELECT
             if (type == "select")
             {
                 return new
@@ -261,6 +284,7 @@ namespace Vault.Data.Notion
                 };
             }
 
+            // MULTI-SELECT
             if (type == "multi_select")
             {
                 return new
@@ -270,9 +294,65 @@ namespace Vault.Data.Notion
                 };
             }
 
-            // ------------------------------------------------------------
-            // DEFAULT: treat as rich_text (title, rich_text, etc.)
-            // ------------------------------------------------------------
+            // ROLLUP
+            if (type == "rollup")
+            {
+                return f.Operator switch
+                {
+                    QueryOperator.Equals => new
+                    {
+                        property = f.Property,
+                        rollup = new
+                        {
+                            any = new
+                            {
+                                number = new { equals = f.Value }
+                            }
+                        }
+                    },
+
+                    QueryOperator.NotEquals => new
+                    {
+                        property = f.Property,
+                        rollup = new
+                        {
+                            any = new
+                            {
+                                number = new { does_not_equal = f.Value }
+                            }
+                        }
+                    },
+
+                    QueryOperator.NotEmpty => new
+                    {
+                        property = f.Property,
+                        rollup = new
+                        {
+                            any = new
+                            {
+                                number = new { is_not_empty = true }
+                            }
+                        }
+                    },
+
+                    QueryOperator.Empty => new
+                    {
+                        property = f.Property,
+                        rollup = new
+                        {
+                            any = new
+                            {
+                                number = new { is_empty = true }
+                            }
+                        }
+                    },
+
+                    _ => throw new NotSupportedException(
+                        $"Operator {f.Operator} not supported for rollup property '{f.Property}'")
+                };
+            }
+
+            // DEFAULT: rich_text
             return f.Operator switch
             {
                 QueryOperator.NotEmpty => new

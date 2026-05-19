@@ -1,27 +1,17 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Vault.Core;
+using Vault.Core.Internal;
 
 namespace Vault.Features.Rawg;
 
 /// <summary>
 /// RAWG controller (Vault 2.0).
-/// 
-/// Responsibilities:
-/// - Provide the /rawg entry point
-/// - Use the Loader pattern (GET → loader, POST → action)
-/// - Delegate all business logic to RawgService
-/// - Pass PageContentModel to the active ViewMode
-/// 
-/// This controller contains *no* UI logic and *no* feature logic.
+/// Provides the /rawg entry point, loader routing, and delegates
+/// all feature logic to <see cref="RawgService"/>.
 /// </summary>
 public sealed class RawgController : Controller
 {
     private readonly RawgService _rawg;
-
-    /// <summary>
-    /// The ViewMode used to render RAWG pages.
-    /// This comes from the feature, not the controller.
-    /// </summary>
     private readonly VaultViewMode _viewMode;
 
     public RawgController(RawgService rawg)
@@ -43,7 +33,7 @@ public sealed class RawgController : Controller
     {
         return View("_Loader", new LoaderModel
         {
-            Message = "Loading RAWG data...",
+            Message = "Loading recently scraped metadata...",
             TargetUrl = Url.Action("IndexPost", "Rawg"),
             TargetAction = "LoadRecentScrapes"
         });
@@ -54,8 +44,7 @@ public sealed class RawgController : Controller
     // =====================================================================
 
     /// <summary>
-    /// Loader POST endpoint.
-    /// Dispatches based on X-Loader-Action header.
+    /// Loader POST endpoint. Dispatches based on X-Loader-Action header.
     /// </summary>
     [HttpPost("/rawg")]
     public async Task<IActionResult> IndexPost(
@@ -64,6 +53,7 @@ public sealed class RawgController : Controller
         return action switch
         {
             "LoadRecentScrapes" => await LoadRecentScrapes(),
+            "RunScrape" => await RunScrape(),
             _ => BadRequest($"Unknown loader action: {action}")
         };
     }
@@ -73,13 +63,64 @@ public sealed class RawgController : Controller
     // =====================================================================
 
     /// <summary>
-    /// Loads the 30 most recently scraped VaultItems,
-    /// builds a PageContentModel via RawgService,
-    /// and renders it using the active ViewMode.
+    /// Loads the most recently scraped items and renders them using
+    /// the active ViewMode.
     /// </summary>
     private async Task<IActionResult> LoadRecentScrapes()
     {
         var model = await _rawg.GetRecentScrapesAsync();
+        model.Meta["Title"] = $"Recently Scraped: {model.Items.Count} Games";
+
+        model.PageButtons.Add(new PageContentButton
+        {
+            Text = "Scrape More",
+            ActionUrl = "/rawg/scrape"
+        });
+
+        return await ViewModeResult.BuildAsync(
+            controller: this,
+            viewMode: _viewMode,
+            model: model
+        );
+    }
+
+    // =====================================================================
+    //  ACTION: Begin Scrape (Loader)
+    // =====================================================================
+
+    /// <summary>
+    /// Begins a new RAWG scrape operation by showing the loader.
+    /// The loader will POST back with X-Loader-Action = "RunScrape".
+    /// </summary>
+    [HttpPost("/rawg/scrape")]
+    public IActionResult Scrape()
+    {
+        return View("_Loader", new LoaderModel
+        {
+            Message = "Scraping. Please wait...",
+            TargetUrl = Url.Action("IndexPost", "Rawg"),
+            TargetAction = "RunScrape"
+        });
+    }
+
+    // =====================================================================
+    //  ACTION: Run Scrape
+    // =====================================================================
+
+    /// <summary>
+    /// Executes a RAWG scrape pass via <see cref="RawgService"/>.
+    /// Returns a page showing only the items scraped in this run.
+    /// </summary>
+    private async Task<IActionResult> RunScrape()
+    {
+        var model = await _rawg.RunScrapeAsync();
+        model.Meta["Title"] = $"Scrape Results: {model.Items.Count} Updated";
+
+        model.PageButtons.Add(new PageContentButton
+        {
+            Text = "Scrape More",
+            ActionUrl = "/rawg/scrape"
+        });
 
         return await ViewModeResult.BuildAsync(
             controller: this,
@@ -92,11 +133,7 @@ public sealed class RawgController : Controller
     //  FUTURE ACTIONS (detail, match, retry, etc.)
     // =====================================================================
 
-    // These will be added later:
-    //
     // private async Task<IActionResult> LoadDetail()
     // private async Task<IActionResult> ApplyMatch()
     // private async Task<IActionResult> RetryScrape()
-    //
-    // The controller remains thin — all logic stays in RawgService.
 }

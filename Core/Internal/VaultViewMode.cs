@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
 
 namespace Vault.Core
 {
@@ -34,7 +35,29 @@ namespace Vault.Core
         /// </summary>
         public virtual IReadOnlyList<string> Scripts => [];
 
-        public static string CacheBust => Assembly.GetExecutingAssembly().GetName().Version?.ToString()  ?? DateTime.UtcNow.Ticks.ToString();
+        public static string CacheBust => Versioning.CacheBust;
+
+        /// <summary>
+        /// Class used to resolve caching issues with CSS. Allows every build to force most recent style changes
+        /// </summary>
+        private static class Versioning
+        {
+            public static readonly string CacheBust;
+
+            static Versioning()
+            {
+                var location = Assembly.GetExecutingAssembly().Location;
+
+                if (string.IsNullOrWhiteSpace(location))
+                {
+                    CacheBust = DateTime.UtcNow.Ticks.ToString();
+                    return;
+                }
+
+                var info = FileVersionInfo.GetVersionInfo(location);
+                CacheBust = info.FileVersion ?? DateTime.UtcNow.Ticks.ToString();
+            }
+        }
     }
 
     public static class VaultViewModes
@@ -53,4 +76,8 @@ namespace Vault.Core
             return mode;
         }
     }
+
+    
+
+
 }

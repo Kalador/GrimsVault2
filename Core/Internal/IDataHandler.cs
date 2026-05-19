@@ -16,6 +16,17 @@ namespace Vault.Data
         Task<List<VaultItem>> GetItemsAsync(QueryDefinition? query = null,int? pageSize = null);
 
         /// <summary>
+        /// Updates a single VaultItem in the backing store.
+        /// </summary>
+        Task UpdateItemAsync(VaultItem item);
+
+        /// <summary>
+        /// Updates multiple VaultItems in the backing store.
+        /// Implementations may parallelise internally.
+        /// </summary>
+        Task UpdateItemsAsync(IEnumerable<VaultItem> items);
+
+        /// <summary>
         /// Requests a list of store definitions from the Stores database.
         /// </summary>
         /// <param name="query">Optional QueryDefinition to filter results.</param>

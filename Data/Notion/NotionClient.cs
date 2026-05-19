@@ -88,6 +88,12 @@ namespace Vault.Data.Notion
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await _http.PatchAsync(_baseUrl + url, content);
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Notion PATCH failed ({response.StatusCode}): {errorBody}");
+            }
+
             response.EnsureSuccessStatusCode();
 
             var body = await response.Content.ReadAsStringAsync();

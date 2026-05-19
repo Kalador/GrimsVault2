@@ -1,5 +1,6 @@
 ﻿using Vault.Core;
 using Vault.Core.Internal;
+using Vault.ViewModes;
 
 namespace Vault.Features.Cex;
 

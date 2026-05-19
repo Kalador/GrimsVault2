@@ -1,5 +1,7 @@
 ﻿using Vault.Core;
 
+namespace Vault.ViewModes;
+
 public sealed class ColumnsViewMode : VaultViewMode
 {
     public static readonly ColumnsViewMode Instance =

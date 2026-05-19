@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Vault.Data;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Vault.Core;
 
@@ -59,6 +60,22 @@ public class VaultService
     {
         return await _data.GetItemsAsync(query, pageSize);
     }
+    /// <summary>
+    /// Updates a single VaultItem in the backing store.
+    /// </summary>
+    public async Task UpdateItem(VaultItem item)
+    {
+        await _data.UpdateItemAsync(item);
+    }
+
+    /// <summary>
+    /// Updates multiple VaultItems in the backing store.
+    /// </summary>
+    public async Task UpdateItems(IEnumerable<VaultItem> items)
+    {
+        await _data.UpdateItemsAsync(items);
+    }
+
 
     /// <summary>
     /// Retrieves VaultStores from the data handler.
