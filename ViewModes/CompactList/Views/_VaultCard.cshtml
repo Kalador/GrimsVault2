@@ -1,9 +1,13 @@
 ﻿@model Vault.Core.Internal.PageContentItem
 
-<div class="compactlist-card @(Model.HasError ? "has-error" : "")">
+<div class="compactlist-card @(Model.HasError ? "has-error" : "")"
+     data-search-card="@(Model.Meta.ContainsKey("is-search-card") ? "true" : "false")">
 
     <div class="compactlist-content">
 
+        @* ------------------------------------------------------------
+           1. Primary title
+           ------------------------------------------------------------ *@
         @if (!string.IsNullOrWhiteSpace(Model.Primary))
         {
             <div class="item-primary">
@@ -11,37 +15,58 @@
             </div>
         }
 
-        @{
+        @* ------------------------------------------------------------
+           2. Platform (Group) + Status badge
+              (HIDDEN for search card)
+           ------------------------------------------------------------ *@
+        @if (!Model.Meta.ContainsKey("is-search-card"))
+        {
             string? statusText = null;
+
             if (Model.Meta.TryGetValue("status", out var statusObj) &&
                 statusObj is string s &&
                 !string.IsNullOrWhiteSpace(s))
             {
                 statusText = s;
             }
-        }
 
-        @if (Model.HasError || !string.IsNullOrWhiteSpace(statusText))
-        {
-            <div class="item-status">
+            <div class="item-secondary-row">
+                <span class="item-group">@Model.Group</span>
+
                 @if (Model.HasError)
                 {
                     <span class="badge badge-error">Error</span>
                 }
-                else
+                else if (!string.IsNullOrWhiteSpace(statusText))
                 {
                     <span class="badge badge-ok">@statusText</span>
                 }
             </div>
         }
 
-        @if (!string.IsNullOrWhiteSpace(Model.Secondary))
+        @* ------------------------------------------------------------
+           2.5 Thumbnail Row (generic, feature-agnostic)
+           ------------------------------------------------------------ *@
+        @if (Model.Meta.TryGetValue("thumbnails", out var thumbObj) &&
+             thumbObj is string thumbStr &&
+             !string.IsNullOrWhiteSpace(thumbStr))
         {
-            <div class="item-secondary">
-                @Model.Secondary
+            var urls = thumbStr.Split(';', StringSplitOptions.RemoveEmptyEntries);
+
+            <div class="item-thumbnails">
+                @foreach (var url in urls)
+                {
+                    <img src="@url"
+                         class="thumbnail"
+                         loading="lazy"
+                         onclick="openThumbnailLightbox(this)" />
+                }
             </div>
         }
 
+        @* ------------------------------------------------------------
+           3. Release Year (Ticker)
+           ------------------------------------------------------------ *@
         @if (!string.IsNullOrWhiteSpace(Model.Ticker))
         {
             <div class="item-ticker">
@@ -49,17 +74,88 @@
             </div>
         }
 
-        @if (!string.IsNullOrWhiteSpace(Model.SecondFooter))
+        @* ------------------------------------------------------------
+           4. Developer + Publisher (Secondary)
+              Icons + space, non-error only
+           ------------------------------------------------------------ *@
+        @if (!Model.HasError && !string.IsNullOrWhiteSpace(Model.Secondary))
+        {
+            <div class="item-secondary">
+                @Model.Secondary
+            </div>
+        }
+
+        @* ------------------------------------------------------------
+           5. Description (SecondFooter)
+              Non-error only
+           ------------------------------------------------------------ *@
+        @if (!Model.HasError && !string.IsNullOrWhiteSpace(Model.SecondFooter))
         {
             <div class="item-footer">
                 @Model.SecondFooter
             </div>
         }
 
+        @* ------------------------------------------------------------
+           Optional inline search form
+           ------------------------------------------------------------ *@
+        @if (Model.Meta.ContainsKey("search-id"))
+        {
+            <form method="post"
+                  action="/rawg/search"
+                  class="inline-search-form">
+
+                <input type="hidden"
+                       name="id"
+                       value="@Model.Meta["search-id"]" />
+
+                <input type="text"
+                       name="query"
+                       class="inline-search-input"
+                       placeholder="Search..."
+                       value="@(Model.Meta.TryGetValue("search-query", out var q) ? q : Model.Primary)" />
+
+                <label class="inline-search-slug">
+                    <input type="checkbox" name="slug" />
+                    Slug?
+                </label>
+
+                <button class="btn item-button">Go</button>
+            </form>
+        }
+
+        @* ------------------------------------------------------------
+           Item-level buttons (Apply, Retry, View, etc.)
+           ------------------------------------------------------------ *@
+        @if (Model.Buttons?.Any() == true)
+        {
+            <div class="item-buttons">
+                @foreach (var btn in Model.Buttons)
+                {
+                    <form method="post"
+                          action="@btn.ActionUrl"
+                          class="item-button-form">
+                        <button class="btn item-button">@btn.Text</button>
+                    </form>
+                }
+            </div>
+        }
+
     </div>
 
-    @if (!string.IsNullOrWhiteSpace(Model.Url))
+    @* ------------------------------------------------------------
+       Clickable overlay (ONLY when error + retry-url exists)
+       ------------------------------------------------------------ *@
+    @{
+        bool hasRetryUrl =
+            Model.HasError &&
+            Model.Meta.TryGetValue("retry-url", out var retryObj) &&
+            retryObj is string retryUrl &&
+            !string.IsNullOrWhiteSpace(retryUrl);
+    }
+
+    @if (hasRetryUrl)
     {
-        <a href="@Model.Url" class="compactlist-overlay"></a>
+        <a href="@Model.Meta["retry-url"]" class="compactlist-overlay"></a>
     }
 </div>

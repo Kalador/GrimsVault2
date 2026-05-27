@@ -9,6 +9,7 @@
 //  The structure is intentionally generic:
 //      PageContentModel
 //          -> Meta (page-level metadata)
+//          -> Inputs (optional page-level input fields)
 //          -> PageButtons (global actions)
 //          -> Items (cards)
 //              -> Buttons (per‑item actions)
@@ -45,6 +46,35 @@ public class PageContentButton
 }
 
 /// <summary>
+/// Represents a single input field rendered at the page level.
+/// ViewModes treat these generically and do not attach meaning.
+/// Features may use them for search boxes, filters, toggles, etc.
+/// </summary>
+public class PageContentInput
+{
+    /// <summary>
+    /// Unique name for this input. Used as the form field name.
+    /// </summary>
+    public string Name { get; set; } = "";
+
+    /// <summary>
+    /// Optional label displayed next to or above the input.
+    /// </summary>
+    public string Label { get; set; } = "";
+
+    /// <summary>
+    /// Optional initial value for the input.
+    /// </summary>
+    public string? Value { get; set; }
+
+    /// <summary>
+    /// Input type (e.g., "text", "checkbox", "number", "hidden").
+    /// ViewModes render this directly.
+    /// </summary>
+    public string Type { get; set; } = "text";
+}
+
+/// <summary>
 /// Represents the full structured content of a Vault page.
 /// A ViewMode receives this model and decides how to render it.
 /// </summary>
@@ -56,6 +86,12 @@ public class PageContentModel
     /// subtitles, warnings, or other non-item-specific information.
     /// </summary>
     public Dictionary<string, object> Meta { get; set; } = [];
+
+    /// <summary>
+    /// Optional input fields that apply to the entire page.
+    /// ViewModes render these above the item groups.
+    /// </summary>
+    public List<PageContentInput> Inputs { get; set; } = [];
 
     /// <summary>
     /// Buttons that apply to the entire page (e.g., Refresh, Search, Apply Filters).

@@ -1,12 +1,34 @@
 ﻿@model Vault.Core.Internal.PageContentModel
 
+@{
+    // ------------------------------------------------------------
+    // Sorting rules:
+    // 1. Non-error items first
+    // 2. Error items after
+    // 3. Group (search card uses \u0000)
+    // 4. Alphabetical by Primary
+    // ------------------------------------------------------------
+    var items = Model.Items
+        .OrderBy(i => i.HasError) // false first
+        .ThenBy(i => i.Group, StringComparer.OrdinalIgnoreCase) // search card sorts first
+        .ThenBy(i => i.Primary, StringComparer.OrdinalIgnoreCase)
+        .ToList();
+}
+
+
 <div class="vault-header">
 
+    @* ------------------------------------------------------------
+       Page Title
+       ------------------------------------------------------------ *@
     @if (Model.Meta.TryGetValue("Title", out var titleObj) && titleObj is string title)
     {
         <h2 class="vault-title">@title</h2>
     }
 
+    @* ------------------------------------------------------------
+       Page-level buttons
+       ------------------------------------------------------------ *@
     @if (Model.PageButtons?.Any() == true)
     {
         <div class="vault-pagebuttons">
@@ -20,17 +42,35 @@
     }
 </div>
 
+@* ------------------------------------------------------------
+   Page-level inputs
+   ------------------------------------------------------------ *@
+@if (Model.Inputs?.Any() == true)
+{
+    <div class="vault-inputs">
+        @foreach (var input in Model.Inputs)
+        {
+            <div class="vault-input">
+                @if (!string.IsNullOrWhiteSpace(input.Label))
+                {
+                    <label for="@input.Name">@input.Label</label>
+                }
 
+                <input type="@input.Type"
+                       id="@input.Name"
+                       name="@input.Name"
+                       value="@input.Value" />
+            </div>
+        }
+    </div>
+}
+
+@* ------------------------------------------------------------
+   Flat CompactList (no grouping)
+   ------------------------------------------------------------ *@
 <div class="compactlist">
-    @foreach (var group in Model.Items.GroupBy(i => i.Group))
+    @foreach (var item in items)
     {
-        <div class="compactlist-group" data-group="@group.Key">
-            <div class="compactlist-group-header">@group.Key</div>
-
-            @foreach (var item in group)
-            {
-                @await Html.PartialAsync("/ViewModes/CompactList/Views/_VaultCard.cshtml", item)
-            }
-        </div>
+        @await Html.PartialAsync("/ViewModes/CompactList/Views/_VaultCard.cshtml", item)
     }
 </div>

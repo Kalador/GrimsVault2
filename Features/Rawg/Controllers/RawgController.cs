@@ -4,11 +4,6 @@ using Vault.Core.Internal;
 
 namespace Vault.Features.Rawg;
 
-/// <summary>
-/// RAWG controller (Vault 2.0).
-/// Provides the /rawg entry point, loader routing, and delegates
-/// all feature logic to <see cref="RawgService"/>.
-/// </summary>
 public sealed class RawgController : Controller
 {
     private readonly RawgService _rawg;
@@ -24,10 +19,6 @@ public sealed class RawgController : Controller
     //  GET /rawg  → Loader
     // =====================================================================
 
-    /// <summary>
-    /// Entry point for the RAWG feature.
-    /// Returns the unified loader which will POST back to LoadRecentScrapes.
-    /// </summary>
     [HttpGet("/rawg")]
     public IActionResult Index()
     {
@@ -40,12 +31,9 @@ public sealed class RawgController : Controller
     }
 
     // =====================================================================
-    //  POST /rawg  → Action router
+    //  POST /rawg → Loader router
     // =====================================================================
 
-    /// <summary>
-    /// Loader POST endpoint. Dispatches based on X-Loader-Action header.
-    /// </summary>
     [HttpPost("/rawg")]
     public async Task<IActionResult> IndexPost(
         [FromHeader(Name = "X-Loader-Action")] string action)
@@ -62,10 +50,6 @@ public sealed class RawgController : Controller
     //  ACTION: Recent Scrapes
     // =====================================================================
 
-    /// <summary>
-    /// Loads the most recently scraped items and renders them using
-    /// the active ViewMode.
-    /// </summary>
     private async Task<IActionResult> LoadRecentScrapes()
     {
         var model = await _rawg.GetRecentScrapesAsync();
@@ -77,21 +61,13 @@ public sealed class RawgController : Controller
             ActionUrl = "/rawg/scrape"
         });
 
-        return await ViewModeResult.BuildAsync(
-            controller: this,
-            viewMode: _viewMode,
-            model: model
-        );
+        return await ViewModeResult.BuildAsync(this, _viewMode, model);
     }
 
     // =====================================================================
-    //  ACTION: Begin Scrape (Loader)
+    //  ACTION: Begin Scrape
     // =====================================================================
 
-    /// <summary>
-    /// Begins a new RAWG scrape operation by showing the loader.
-    /// The loader will POST back with X-Loader-Action = "RunScrape".
-    /// </summary>
     [HttpPost("/rawg/scrape")]
     public IActionResult Scrape()
     {
@@ -107,10 +83,6 @@ public sealed class RawgController : Controller
     //  ACTION: Run Scrape
     // =====================================================================
 
-    /// <summary>
-    /// Executes a RAWG scrape pass via <see cref="RawgService"/>.
-    /// Returns a page showing only the items scraped in this run.
-    /// </summary>
     private async Task<IActionResult> RunScrape()
     {
         var model = await _rawg.RunScrapeAsync();
@@ -122,18 +94,50 @@ public sealed class RawgController : Controller
             ActionUrl = "/rawg/scrape"
         });
 
-        return await ViewModeResult.BuildAsync(
-            controller: this,
-            viewMode: _viewMode,
-            model: model
-        );
+        return await ViewModeResult.BuildAsync(this, _viewMode, model);
     }
 
     // =====================================================================
-    //  FUTURE ACTIONS (detail, match, retry, etc.)
+    //  ACTION: Search (GET)
     // =====================================================================
 
-    // private async Task<IActionResult> LoadDetail()
-    // private async Task<IActionResult> ApplyMatch()
-    // private async Task<IActionResult> RetryScrape()
+    [HttpGet("/rawg/search")]
+    public IActionResult Search([FromQuery] string id, [FromQuery] string? query)
+    {
+        return View("_Loader", new LoaderModel
+        {
+            Message = "Searching RAWG...",
+            TargetUrl = Url.Action("SearchPost", "Rawg", new { id, query }),
+            TargetAction = "LoadSearch"
+        });
+    }
+
+
+    // =====================================================================
+    //  ACTION: Search (POST)
+    // =====================================================================
+
+    [HttpPost("/rawg/search")]
+    public async Task<IActionResult> SearchPost(
+        [FromQuery] string id,
+        [FromQuery] string? query)
+    {
+        var model = await _rawg.BuildSearchModelAsync(id, query);
+        return await ViewModeResult.BuildAsync(this, _viewMode, model);
+    }
+
+
+    // =====================================================================
+    //  ACTION: Apply Match
+    // =====================================================================
+
+    [HttpPost("/rawg/apply")]
+    public async Task<IActionResult> Apply(
+        [FromForm(Name = "id")] string pageId,
+        [FromForm(Name = "rawgId")] int rawgId,
+        [FromForm(Name = "overwriteName")] bool overwriteName = false)
+    {
+        var model = await _rawg.ApplyMatchAndBuildSearchModelAsync(pageId, rawgId, overwriteName);
+        return await ViewModeResult.BuildAsync(this, _viewMode, model);
+    }
 }

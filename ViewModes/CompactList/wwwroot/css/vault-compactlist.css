@@ -1,29 +1,56 @@
-﻿.compactlist {
+﻿/* ------------------------------------------------------------
+   CompactList container
+   ------------------------------------------------------------ */
+.compactlist {
     padding: 0.5rem 0;
     width: 100%;
     max-width: 600px;
     margin: 0 auto;
 }
 
-.compactlist-group {
-    margin-bottom: 1rem;
+/* ------------------------------------------------------------
+   Page-level inputs (unused for RAWG now, but kept for other features)
+   ------------------------------------------------------------ */
+.vault-inputs {
+    margin: 0.75rem 0 1rem 0;
+    padding: 0 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
-.compactlist-group-header {
+.vault-input label {
+    display: block;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #555;
-    padding: 0.25rem 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+    color: #444;
 }
 
+.vault-input input[type="text"],
+.vault-input input[type="number"],
+.vault-input input[type="search"] {
+    width: 100%;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.vault-input input[type="checkbox"] {
+    transform: scale(1.2);
+    margin-right: 0.4rem;
+}
+
+/* ------------------------------------------------------------
+   Card container
+   ------------------------------------------------------------ */
 .compactlist-card {
     background: #fff;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
-    padding: 1.25rem;
-    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     display: block;
     cursor: pointer;
@@ -44,19 +71,9 @@
             background: #ffecec;
         }
 
-.item-primary {
-    font-weight: 600;
-    font-size: 1.1rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.item-status {
-    margin-top: 0.35rem;
-    font-size: 0.85rem;
-}
-
+/* ------------------------------------------------------------
+   Badges
+   ------------------------------------------------------------ */
 .badge {
     padding: 2px 6px;
     border-radius: 4px;
@@ -75,32 +92,223 @@
     color: #155724;
 }
 
-.item-secondary {
-    margin-top: 0.5rem;
-    font-size: 0.85rem;
-    color: #666;
-}
+/* ------------------------------------------------------------
+   Card content
+   ------------------------------------------------------------ */
 
-.item-ticker {
-    margin-top: 0.5rem;
-    font-size: 0.9rem;
-    color: #444;
-    min-height: 3.5rem;
+/* Title row */
+.item-primary {
+    font-weight: 600;
+    font-size: 1.05rem;
+    white-space: nowrap;
     overflow: hidden;
-    text-align: justify;
+    text-overflow: ellipsis;
+    margin-bottom: 0.15rem;
 }
 
-
-.item-footer {
-    margin-top: 0.5rem;
+/* Platform + Status row */
+.item-secondary-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-size: 0.85rem;
     color: #666;
+    margin-bottom: 0.25rem;
 }
 
+.item-group {
+    font-weight: 500;
+    color: #555;
+}
+
+/* Release year (Ticker) */
+.item-ticker {
+    font-size: 0.85rem;
+    color: #555;
+    margin-bottom: 0.35rem;
+    line-height: 1.2;
+    overflow: hidden;
+}
+
+/* Developer + Publisher row */
+.item-secondary {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 0.45rem;
+    line-height: 1.2;
+}
+
+/* Description block (clamped) */
+.item-footer {
+    font-size: 0.85rem;
+    color: #666;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------------------
+   Non-interactive cards (no retry URL)
+   ------------------------------------------------------------ */
+.compactlist-card:not(.has-error) {
+    cursor: default;
+}
+
+    .compactlist-card:not(.has-error):hover {
+        background: #fff;
+    }
+
+/* ------------------------------------------------------------
+   Item-level buttons (cleaned + deduped)
+   ------------------------------------------------------------ */
+.item-buttons {
+    margin-top: 0.6rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    position: relative;
+    z-index: 10;
+}
+
+.item-button-form {
+    display: inline-block;
+}
+
+.item-button {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background-color: #343a40;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    text-align: center;
+    vertical-align: middle;
+}
+
+    .item-button:hover {
+        background-color: #495057;
+    }
+
+/* ------------------------------------------------------------
+   Inline search form
+   ------------------------------------------------------------ */
+.inline-search-form {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+    position: relative;
+    z-index: 10;
+}
+
+.inline-search-input {
+    flex: 1;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+/* ------------------------------------------------------------
+   Clickable overlay
+   ------------------------------------------------------------ */
 .compactlist-overlay {
     position: absolute;
     inset: 0;
     z-index: 5;
     text-decoration: none;
     color: inherit;
+}
+
+/* ------------------------------------------------------------
+   Thumbnail row (generic, feature-agnostic)
+   ------------------------------------------------------------ */
+.item-thumbnails {
+    display: flex;
+    gap: 6px;
+    margin: 0.35rem 0 0.4rem 0;
+    padding: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+}
+
+    .item-thumbnails::-webkit-scrollbar {
+        display: none; /* Chrome/Safari */
+    }
+
+/* Individual thumbnail */
+.thumbnail {
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+    object-fit: cover;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+    .thumbnail:hover {
+        transform: scale(1.12);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+
+/* ------------------------------------------------------------
+   Lightbox overlay (generic)
+   ------------------------------------------------------------ */
+.thumbnail-lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    cursor: zoom-out;
+    animation: fadeInLightbox 0.15s ease-out;
+}
+
+.thumbnail-lightbox-image {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    animation: popInLightbox 0.15s ease-out;
+}
+
+/* ------------------------------------------------------------
+   Lightbox animations
+   ------------------------------------------------------------ */
+@keyframes fadeInLightbox {
+    from {
+        background: rgba(0,0,0,0);
+    }
+
+    to {
+        background: rgba(0,0,0,0.85);
+    }
+}
+
+@keyframes popInLightbox {
+    from {
+        transform: scale(0.85);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Add spacing *after* the search card only */
+.compactlist-card[data-search-card="true"] {
+    margin-bottom: 1.5rem;
 }

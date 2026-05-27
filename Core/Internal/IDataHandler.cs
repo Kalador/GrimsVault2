@@ -16,6 +16,13 @@ namespace Vault.Data
         Task<List<VaultItem>> GetItemsAsync(QueryDefinition? query = null,int? pageSize = null);
 
         /// <summary>
+        /// Request a single VaultItem object using the item Key as reference
+        /// </summary>
+        /// <param name="pageID">The GUID / Key of a single VaulItem</param>
+        /// <returns>A sing VaultItem object.</returns>
+        Task<VaultItem?> GetItemAsync(string pageID);
+
+        /// <summary>
         /// Updates a single VaultItem in the backing store.
         /// </summary>
         Task UpdateItemAsync(VaultItem item);
@@ -25,6 +32,8 @@ namespace Vault.Data
         /// Implementations may parallelise internally.
         /// </summary>
         Task UpdateItemsAsync(IEnumerable<VaultItem> items);
+
+
 
         /// <summary>
         /// Requests a list of store definitions from the Stores database.

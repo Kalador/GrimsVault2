@@ -179,66 +179,7 @@ namespace Vault.Data.Notion
                 };
             }
 
-            // ------------------------------------------------------------
-            // SELECT: Set Name
-            // ------------------------------------------------------------
-            if (item.SetName != null && propertyTypes.ContainsKey("Set Name"))
-            {
-                props["Set Name"] = new
-                {
-                    select = new { name = item.SetName }
-                };
-            }
 
-            // ------------------------------------------------------------
-            // SELECT: Subset
-            // ------------------------------------------------------------
-            if (item.Subset != null && propertyTypes.ContainsKey("Subset"))
-            {
-                props["Subset"] = new
-                {
-                    select = new { name = item.Subset }
-                };
-            }
-
-            // ------------------------------------------------------------
-            // RICH TEXT: SortOrder
-            // ------------------------------------------------------------
-            if (item.SortOrder != null && propertyTypes.ContainsKey("Sort Order"))
-            {
-                props["Sort Order"] = new
-                {
-                    rich_text = new[]
-                    {
-                        new { type = "text", text = new { content = item.SortOrder } }
-                    }
-                };
-            }
-
-            // ------------------------------------------------------------
-            // RICH TEXT: CEX Product Code
-            // ------------------------------------------------------------
-            if (item.CexID != null && propertyTypes.ContainsKey("CEX Product Code"))
-            {
-                props["CEX Product Code"] = new
-                {
-                    rich_text = new[]
-                    {
-                        new { type = "text", text = new { content = item.CexID } }
-                    }
-                };
-            }
-
-            // ------------------------------------------------------------
-            // CHECKBOX: Search eBay
-            // ------------------------------------------------------------
-            if (propertyTypes.ContainsKey("Search eBay"))
-            {
-                props["Search eBay"] = new
-                {
-                    checkbox = item.SearchEbay
-                };
-            }
 
             // ------------------------------------------------------------
             // FILES: Media

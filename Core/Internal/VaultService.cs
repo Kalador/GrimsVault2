@@ -60,12 +60,22 @@ public class VaultService
     {
         return await _data.GetItemsAsync(query, pageSize);
     }
+
+    /// <summary>
+    /// Retrieves a VaultItem from the data handler.
+    /// </summary>
+    public async Task<VaultItem?> GetItem(string id)
+    {
+        return await _data.GetItemAsync(id);
+    
+    }
+
     /// <summary>
     /// Updates a single VaultItem in the backing store.
     /// </summary>
     public async Task UpdateItem(VaultItem item)
     {
-        await _data.UpdateItemAsync(item);
+        await _data.    UpdateItemAsync(item);
     }
 
     /// <summary>

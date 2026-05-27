@@ -1,4 +1,5 @@
-﻿using Vault.Core;
+﻿using System.Text.Json;
+using Vault.Core;
 
 namespace Vault.Data.Notion
 {
@@ -73,6 +74,23 @@ namespace Vault.Data.Notion
                     .Select(NotionMapper.MapVaultItem)
             ];
         }
+
+        public async Task<VaultItem?> GetItemAsync(string pageId)
+        {
+            // Use the existing NotionClient, not a raw HttpClient
+            var json = await _client.GetAsync($"/pages/{pageId}");
+
+            // If Notion returned nothing or malformed JSON, bail out
+            if (json is null || !json.RootElement.TryGetProperty("properties", out _))
+                return null;
+
+            // Your mapper already handles single-page objects perfectly
+            return NotionMapper.MapVaultItem(json.RootElement);
+        }
+
+
+
+
 
         // =====================================================================
         //  STORES (READ)

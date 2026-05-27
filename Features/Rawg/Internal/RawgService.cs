@@ -5,11 +5,6 @@ using Vault.ViewModes;
 
 namespace Vault.Features.Rawg;
 
-/// <summary>
-/// RAWG feature service. Handles RAWG search, scrape passes,
-/// applying RAWG metadata to VaultItems, and producing
-/// ViewMode-friendly page content.
-/// </summary>
 public sealed class RawgService(IConfiguration config, VaultService vault) : IVaultFeature
 {
     private readonly RawgApiClient _api = new(new HttpClient(), config);
@@ -24,33 +19,21 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
     public string Status() => "RAWG Feature OK";
     public VaultViewMode DefaultViewMode => CompactListViewMode.Instance;
 
-    // ------------------------------------------------------------
-    // Recent Scrapes
-    // ------------------------------------------------------------
+    // =====================================================================
+    //  RECENT SCRAPES
+    // =====================================================================
 
-    /// <summary>
-    /// Returns a page model containing the most recently scraped items,
-    /// sorted by scrape timestamp (descending).
-    /// </summary>
-    public async Task<PageContentModel> GetRecentScrapesAsync(int pageSize = 24)
+    public async Task<PageContentModel> GetRecentScrapesAsync(int pageSize = 32)
     {
         var items = await vault.GetItems(new QueryDefinition
         {
             Filters =
             {
-                new QueryFilter
-                {
-                    Property = "Scraped",
-                    Operator = QueryOperator.NotEmpty
-                }
+                new QueryFilter { Property = "Scraped", Operator = QueryOperator.NotEmpty }
             },
             Sorts =
             {
-                new QuerySort
-                {
-                    Property = "Scraped",
-                    Direction = QuerySortDirection.Desc
-                }
+                new QuerySort { Property = "Scraped", Direction = QuerySortDirection.Desc }
             }
         }, pageSize: pageSize);
 
@@ -62,44 +45,21 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
         return model;
     }
 
-    /// <summary>
-    /// Runs a scrape pass against all eligible Vault items.
-    /// Eligibility matches the original RAWG 1.0 behaviour:
-    /// Games with no RAWG ID, and with valid Name and PlatformId.
-    ///
-    /// This placeholder version does not call RAWG. It applies a
-    /// temporary merge step and returns the updated items as a
-    /// <see cref="PageContentModel"/> for display.
-    /// </summary>
+    // =====================================================================
+    //  SCRAPE PASS
+    // =====================================================================
+
     public async Task<PageContentModel> RunScrapeAsync()
     {
-        // Select items eligible for scraping
         var itemsToScrape = await vault.GetItems(new QueryDefinition
         {
             Filters =
-        {
-            new QueryFilter
             {
-                Property = "Category",
-                Operator = QueryOperator.Equals,
-                Value = "Games"
-            },
-            new QueryFilter
-            {
-                Property = "RAWG ID",
-                Operator = QueryOperator.Empty
-            },
-            new QueryFilter
-            {
-                Property = "Name",
-                Operator = QueryOperator.NotEmpty
-            },
-            new QueryFilter
-            {
-                Property = "Platform ID",
-                Operator = QueryOperator.NotEmpty
+                new QueryFilter { Property = "Category", Operator = QueryOperator.Equals, Value = "Games" },
+                new QueryFilter { Property = "RAWG ID", Operator = QueryOperator.Empty },
+                new QueryFilter { Property = "Name", Operator = QueryOperator.NotEmpty },
+                new QueryFilter { Property = "Platform ID", Operator = QueryOperator.NotEmpty }
             }
-        }
         }, 24);
 
         var updated = new ConcurrentBag<VaultItem>();
@@ -110,10 +70,8 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
             await semaphore.WaitAsync();
             try
             {
-                // Search RAWG for possible matches
                 var matches = await SearchAsync(item);
 
-                // Exact name match
                 var match = matches.FirstOrDefault(r =>
                     string.Equals(
                         r.Name?.Normalize(),
@@ -128,7 +86,6 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
                     return;
                 }
 
-                // Fetch full RAWG details
                 var full = await SearchByIdAsync(match.Id);
 
                 if (full == null)
@@ -139,9 +96,7 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
                     return;
                 }
 
-                // Apply metadata
                 ApplyRawgMatch(item, full, overwriteName: false);
-
                 updated.Add(item);
             }
             finally
@@ -151,10 +106,8 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
         });
 
         await Task.WhenAll(tasks);
-
         await vault.UpdateItems(updated);
 
-        // Build page model for display
         var model = new PageContentModel();
 
         foreach (var item in updated)
@@ -163,38 +116,20 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
         return model;
     }
 
+    // =====================================================================
+    //  RAWG SEARCH HELPERS
+    // =====================================================================
 
-
-    /// <summary>
-    /// Temporary merge step used during early development.
-    /// Replaces RAWG integration. Mutates the item in-place.
-    /// </summary>
-    private static VaultItem PlaceholderMerge(VaultItem item)
-    {
-        item.Name = "WORKS";
-        return item;
-    }
-
-    
-    /// <summary>
-    /// Searches RAWG for possible matches for a given VaultItem.
-    /// </summary>
     public async Task<List<RawgApiModels.RawgGame>> SearchAsync(VaultItem item)
     {
         return await _api.SearchRawgAsync(item.Name ?? string.Empty, item.PlatformId);
     }
 
-    /// <summary>
-    /// Fetches a RAWG game by its numeric ID.
-    /// </summary>
     public async Task<RawgApiModels.RawgGame?> SearchByIdAsync(int rawgId)
     {
         return await _api.GetGameByIdAsync(rawgId);
     }
 
-    /// <summary>
-    /// Fetches a RAWG game by its slug.
-    /// </summary>
     public async Task<RawgApiModels.RawgGame?> SearchBySlugAsync(string slug)
     {
         if (string.IsNullOrWhiteSpace(slug))
@@ -203,10 +138,6 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
         return await _api.GetGameBySlugAsync(slug);
     }
 
-    /// <summary>
-    /// Applies a RAWG match to a VaultItem by fetching full details
-    /// and mapping them onto the item.
-    /// </summary>
     public async Task<VaultItem?> ApplyMatchAsync(VaultItem item, int rawgId, bool overwriteName = false)
     {
         var full = await _api.GetGameByIdAsync(rawgId);
@@ -216,18 +147,149 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
         return ApplyRawgMatch(item, full, overwriteName);
     }
 
-    // ------------------------------------------------------------
-    // Card Builder
-    // ------------------------------------------------------------
+    // =====================================================================
+    //  SEARCH PAGE (Unified)
+    // =====================================================================
 
-    /// <summary>
-    /// Builds a card representing a recently scraped Vault item.
-    /// </summary>
+    public async Task<PageContentModel> BuildSearchModelAsync(string pageId, string? query)
+    {
+        var item = await vault.GetItem(pageId);
+
+        if (item == null)
+        {
+            return new PageContentModel
+            {
+                Meta = { ["Title"] = "Item Not Found" }
+            };
+        }
+
+        query = string.IsNullOrWhiteSpace(query) ? item.Name ?? "" : query;
+
+        var model = new PageContentModel
+        {
+            Meta =
+            {
+                ["Title"] = $"RAWG Search: {item.Name}",
+                ["Mode"] = "Search",
+                ["PageId"] = item.PageId,
+                ["Platform"] = item.PlatformName ?? ""
+            }
+        };
+
+        // SEARCH CARD — pinned to top using invisible null-char group
+        model.Items.Add(new PageContentItem
+        {
+            Group = "\u0000",
+            Primary = $"🎮 {item.Name ?? ""}",
+            SecondFooter = $"RAWG Search: {query}",
+            Meta =
+    {
+        ["search-id"] = item.PageId,
+        ["search-query"] = query,
+        ["is-search-card"] = "true"   // <-- add this
+    }
+        });
+
+
+        // RAWG search
+        var results = await _api.SearchRawgAsync(query, item.PlatformId);
+
+        foreach (var r in results)
+            model.Items.Add(BuildMatchCard(item, r));
+
+        return model;
+    }
+
+    // =====================================================================
+    //  APPLY MATCH → Return to Search Page
+    // =====================================================================
+
+    public async Task<PageContentModel> ApplyMatchAndBuildSearchModelAsync(
+        string pageId,
+        int rawgId,
+        bool overwriteName)
+    {
+        var item = await vault.GetItem(pageId);
+        if (item == null)
+            return new PageContentModel
+            {
+                Meta = { ["Title"] = "Item Not Found" }
+            };
+
+        var updated = await ApplyMatchAsync(item, rawgId, overwriteName);
+        if (updated != null)
+            await vault.UpdateItem(updated);
+
+        return await BuildSearchModelAsync(pageId, updated?.Name ?? "");
+    }
+
+    // =====================================================================
+    //  MATCH CARD (Platforms, Year, Thumbnails)
+    // =====================================================================
+
+    private PageContentItem BuildMatchCard(VaultItem item, RawgApiModels.RawgGame match)
+    {
+        var year = match.Released;
+
+        var platforms = match.PlatformWrappers is { Count: > 0 }
+            ? string.Join(" | ",
+                match.PlatformWrappers
+                    .Select(p => p.Platform?.Name)
+                    .Where(n => !string.IsNullOrWhiteSpace(n))!)
+            : null;
+
+        // Up to 5 thumbnails (ShortScreenshots)
+        var thumbnails = match.ShortScreenshots?
+            .Select(s => s.ImageUrl)
+            .Where(url => !string.IsNullOrWhiteSpace(url))
+            .Take(5)
+            .ToList();
+
+        var card = new PageContentItem
+        {
+            Group = platforms ?? "",
+            Primary = $"🎮 {match.Name ?? "(no name)"}",
+            Ticker = year is not null ? $"📅 {year}" : null,
+            Secondary = null,
+            SecondFooter = match.DescriptionRaw,
+            ImageUrl = match.BackgroundImage,
+            Meta =
+            {
+                ["rawgId"] = match.Id,
+                ["id"] = item.PageId
+            }
+        };
+
+        if (thumbnails?.Count > 0)
+            card.Meta["thumbnails"] = string.Join(";", thumbnails);
+
+        card.Buttons.Add(new PageContentButton
+        {
+            Text = "Save",
+            ActionUrl = $"/rawg/apply?id={item.PageId}&rawgId={match.Id}"
+        });
+
+        if (!string.IsNullOrWhiteSpace(match.Slug))
+        {
+            card.Buttons.Add(new PageContentButton
+            {
+                Text = "View",
+                ActionUrl = $"https://rawg.io/games/{match.Slug}"
+            });
+        }
+
+        return card;
+    }
+
+    // =====================================================================
+    //  RECENT SCRAPE CARD
+    // =====================================================================
+
     private static PageContentItem BuildRecentScrapeCard(VaultItem item) => new()
     {
         Group = item.PlatformName ?? "Unknown Platform",
 
-        Secondary = string.Join(" / ",
+        Secondary = string.Join(" ",
             new[]
             {
                 item.Developer is { Length: > 0 } d ? $"🛠️ {d}" : null,
@@ -238,30 +300,27 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
         Primary = $"🎮 {item.Name ?? "(no name)"}",
         ImageUrl = item.Media?.FirstOrDefault(),
 
-        SecondFooter =
-            item.ReleaseDate is not null
-                ? $"📅 {item.ReleaseDate:yyyy}"
-                : item.Scraped is not null
-                    ? $"📅 {item.Scraped:yyyy-MM-dd HH:mm}"
-                    : null,
+        Ticker = item.ReleaseDate is not null ? $"📅 {item.ReleaseDate:yyyy}" : null,
 
-        Ticker = item.Description,
-        Url = $"/rawg/detail?id={item.PageId}",
+        SecondFooter = item.Description,
+
+        Url = $"/rawg/search?id={item.PageId}&query={Uri.EscapeDataString(item.Name ?? "")}",
 
         HasError = string.Equals(item.ScrapeStatus, "Error", StringComparison.OrdinalIgnoreCase),
 
         Meta =
         {
-            ["id"]     = item.PageId,
+            ["id"] = item.PageId,
             ["rawgId"] = item.RawgId ?? "",
-            ["status"] = item.ScrapeStatus ?? ""
+            ["status"] = item.ScrapeStatus ?? "",
+            ["retry-url"] = $"/rawg/search?id={item.PageId}&query={Uri.EscapeDataString(item.Name ?? "")}"
         }
     };
 
+    // =====================================================================
+    //  RAWG → VAULT MAPPING
+    // =====================================================================
 
-    /// <summary>
-    /// Maps RAWG fields onto a VaultItem.
-    /// </summary>
     public VaultItem ApplyRawgMatch(VaultItem item, RawgApiModels.RawgGame match, bool overwriteName)
     {
         item.RawgId = match.Id.ToString();
@@ -281,9 +340,6 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
             item.Description = match.DescriptionRaw.Sanitize();
 
         var media = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(match.BackgroundImage))
-            media.Add(match.BackgroundImage);
 
         if (match.ShortScreenshots?.Count > 0)
         {

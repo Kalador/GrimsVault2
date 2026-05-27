@@ -18,6 +18,7 @@ html, body {
     user-select: none !important;
 }
 
+
 /* Containers */
 .container {
     max-width: 900px;
@@ -202,17 +203,22 @@ a {
 
 .vault-header {
     text-align: center;
-    margin-bottom: 1rem;
+    /*margin-bottom: 1rem;*/
 }
 
 .vault-title {
     margin: 0;
-    font-size: 1.4rem;
-    font-weight: 600;
+    display: block;
+    font-size: 1.5em;
+    margin-block-start: 0.83em;
+    margin-block-end: 0.83em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    font-weight: bold;
+    unicode-bidi: isolate;
 }
 
 .vault-pagebuttons {
-    margin-top: 0.5rem;
     display: inline-flex;
     gap: 0.5rem;
 }
