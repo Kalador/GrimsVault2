@@ -5,20 +5,13 @@
 
     <div class="compactlist-content">
 
-        @* ------------------------------------------------------------
-           1. Primary title
-           ------------------------------------------------------------ *@
+        @* Primary text *@
         @if (!string.IsNullOrWhiteSpace(Model.Primary))
         {
-            <div class="item-primary">
-                @Model.Primary
-            </div>
+            <div class="item-primary">@Model.Primary</div>
         }
 
-        @* ------------------------------------------------------------
-           2. Platform (Group) + Status badge
-              (HIDDEN for search card)
-           ------------------------------------------------------------ *@
+        @* Secondary row *@
         @if (!Model.Meta.ContainsKey("is-search-card"))
         {
             string? statusText = null;
@@ -44,9 +37,7 @@
             </div>
         }
 
-        @* ------------------------------------------------------------
-           2.5 Thumbnail Row (generic, feature-agnostic)
-           ------------------------------------------------------------ *@
+        @* Thumbnails *@
         @if (Model.Meta.TryGetValue("thumbnails", out var thumbObj) &&
              thumbObj is string thumbStr &&
              !string.IsNullOrWhiteSpace(thumbStr))
@@ -64,88 +55,83 @@
             </div>
         }
 
-        @* ------------------------------------------------------------
-           3. Release Year (Ticker)
-           ------------------------------------------------------------ *@
+        @* Ticker *@
         @if (!string.IsNullOrWhiteSpace(Model.Ticker))
         {
-            <div class="item-ticker">
-                @Model.Ticker
-            </div>
+            <div class="item-ticker">@Model.Ticker</div>
         }
 
-        @* ------------------------------------------------------------
-           4. Developer + Publisher (Secondary)
-              Icons + space, non-error only
-           ------------------------------------------------------------ *@
+        @* Secondary text *@
         @if (!Model.HasError && !string.IsNullOrWhiteSpace(Model.Secondary))
         {
-            <div class="item-secondary">
-                @Model.Secondary
-            </div>
+            <div class="item-secondary">@Model.Secondary</div>
         }
 
-        @* ------------------------------------------------------------
-           5. Description (SecondFooter)
-              Non-error only
-           ------------------------------------------------------------ *@
-        @if (!Model.HasError && !string.IsNullOrWhiteSpace(Model.SecondFooter))
+        @* Footer text *@
+        @if (!string.IsNullOrWhiteSpace(Model.SecondFooter))
         {
-            <div class="item-footer">
-                @Model.SecondFooter
-            </div>
+            <div class="item-footer">@Model.SecondFooter</div>
         }
 
-        @* ------------------------------------------------------------
-           Optional inline search form
-           ------------------------------------------------------------ *@
+        @* Inline search form (GET, like default search) *@
         @if (Model.Meta.ContainsKey("search-id"))
         {
-            <form method="post"
+            var sid = (string)Model.Meta["search-id"];
+            var initialQuery = Model.Meta.TryGetValue("search-query", out var q)
+                ? q?.ToString()
+                : Model.Primary;
+
+            <form method="get"
                   action="/rawg/search"
                   class="inline-search-form">
 
-                <input type="hidden"
-                       name="id"
-                       value="@Model.Meta["search-id"]" />
+                <input type="hidden" name="id" value="@sid" />
 
                 <input type="text"
                        name="query"
                        class="inline-search-input"
                        placeholder="Search..."
-                       value="@(Model.Meta.TryGetValue("search-query", out var q) ? q : Model.Primary)" />
+                       value="@initialQuery" />
 
                 <label class="inline-search-slug">
                     <input type="checkbox" name="slug" />
                     Slug?
                 </label>
 
-                <button class="btn item-button">Go</button>
+                <button class="btn item-button">Search</button>
             </form>
         }
 
-        @* ------------------------------------------------------------
-           Item-level buttons (Apply, Retry, View, etc.)
-           ------------------------------------------------------------ *@
+        @* Action buttons *@
         @if (Model.Buttons?.Any() == true)
         {
             <div class="item-buttons">
                 @foreach (var btn in Model.Buttons)
                 {
-                    <form method="post"
-                          action="@btn.ActionUrl"
-                          class="item-button-form">
-                        <button class="btn item-button">@btn.Text</button>
-                    </form>
+                    if (btn.ActionUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <a href="@btn.ActionUrl"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="btn item-button item-button-link">
+                            @btn.Text
+                        </a>
+                    }
+                    else
+                    {
+                        <form method="post"
+                              action="@btn.ActionUrl"
+                              class="item-button-form">
+                            <button class="btn item-button">@btn.Text</button>
+                        </form>
+                    }
                 }
             </div>
         }
 
     </div>
 
-    @* ------------------------------------------------------------
-       Clickable overlay (ONLY when error + retry-url exists)
-       ------------------------------------------------------------ *@
+    @* Retry overlay only for errors *@
     @{
         bool hasRetryUrl =
             Model.HasError &&

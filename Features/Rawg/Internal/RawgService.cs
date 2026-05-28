@@ -163,7 +163,8 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
             };
         }
 
-        query = string.IsNullOrWhiteSpace(query) ? item.Name ?? "" : query;
+        // ⭐ FIXED: Only fallback if query is null (not empty, not whitespace)
+        query ??= item.Name ?? "";
 
         var model = new PageContentModel
         {
@@ -183,13 +184,12 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
             Primary = $"🎮 {item.Name ?? ""}",
             SecondFooter = $"RAWG Search: {query}",
             Meta =
-    {
-        ["search-id"] = item.PageId,
-        ["search-query"] = query,
-        ["is-search-card"] = "true"   // <-- add this
-    }
+            {
+                ["search-id"] = item.PageId,
+                ["search-query"] = query,
+                ["is-search-card"] = "true"
+            }
         });
-
 
         // RAWG search
         var results = await _api.SearchRawgAsync(query, item.PlatformId);
@@ -224,7 +224,7 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
     }
 
     // =====================================================================
-    //  MATCH CARD (Platforms, Year, Thumbnails)
+    //  MATCH CARD
     // =====================================================================
 
     private PageContentItem BuildMatchCard(VaultItem item, RawgApiModels.RawgGame match)
@@ -238,7 +238,6 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
                     .Where(n => !string.IsNullOrWhiteSpace(n))!)
             : null;
 
-        // Up to 5 thumbnails (ShortScreenshots)
         var thumbnails = match.ShortScreenshots?
             .Select(s => s.ImageUrl)
             .Where(url => !string.IsNullOrWhiteSpace(url))
@@ -250,7 +249,6 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
             Group = platforms ?? "",
             Primary = $"🎮 {match.Name ?? "(no name)"}",
             Ticker = year is not null ? $"📅 {year}" : null,
-            Secondary = null,
             SecondFooter = match.DescriptionRaw,
             ImageUrl = match.BackgroundImage,
             Meta =
@@ -303,8 +301,6 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
         Ticker = item.ReleaseDate is not null ? $"📅 {item.ReleaseDate:yyyy}" : null,
 
         SecondFooter = item.Description,
-
-        Url = $"/rawg/search?id={item.PageId}&query={Uri.EscapeDataString(item.Name ?? "")}",
 
         HasError = string.Equals(item.ScrapeStatus, "Error", StringComparison.OrdinalIgnoreCase),
 

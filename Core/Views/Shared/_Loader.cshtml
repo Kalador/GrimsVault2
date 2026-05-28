@@ -1,43 +1,43 @@
-﻿@model Vault.Core.LoaderModel
+﻿    @model Vault.Core.LoaderModel
 
-<div id="vault-loader" class="vault-loader">
-    <h2 class="vault-loader-text">@Model.Message</h2>
-</div>
+    <div id="vault-loader" class="vault-loader">
+        <h2 class="vault-loader-text">@Model.Message</h2>
+    </div>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
 
-        fetch("@Model.TargetUrl", {
-            method: "POST",
-            headers: {
-                "X-Loader-Action": "@Model.TargetAction"
-            }
-        })
-        .then(r => r.json())   // IMPORTANT: parse JSON, not text
-        .then(data => {
+            fetch("@Model.TargetUrl", {
+                method: "POST",
+                headers: {
+                    "X-Loader-Action": "@Model.TargetAction"
+                }
+            })
+            .then(r => r.json())   // IMPORTANT: parse JSON, not text
+            .then(data => {
 
-            // Replace loader with the rendered HTML
-            document.getElementById("vault-loader").outerHTML = data.html;
+                // Replace loader with the rendered HTML
+                document.getElementById("vault-loader").outerHTML = data.html;
 
-            // Load CSS files declared by the ViewMode
-            (data.styles || []).forEach(href => {
-                const link = document.createElement("link");
-                link.rel = "stylesheet";
-                link.href = href;
-                document.head.appendChild(link);
+                // Load CSS files declared by the ViewMode
+                (data.styles || []).forEach(href => {
+                    const link = document.createElement("link");
+                    link.rel = "stylesheet";
+                    link.href = href;
+                    document.head.appendChild(link);
+                });
+
+                // Load JS files declared by the ViewMode
+                (data.scripts || []).forEach(src => {
+                    const script = document.createElement("script");
+                    script.src = src;
+                    document.body.appendChild(script);
+                });
+            })
+            .catch(err => {
+                console.error("Loader error:", err);
+                document.getElementById("vault-loader").innerHTML =
+                    "<p style='color:red;'>Failed to load content.</p>";
             });
-
-            // Load JS files declared by the ViewMode
-            (data.scripts || []).forEach(src => {
-                const script = document.createElement("script");
-                script.src = src;
-                document.body.appendChild(script);
-            });
-        })
-        .catch(err => {
-            console.error("Loader error:", err);
-            document.getElementById("vault-loader").innerHTML =
-                "<p style='color:red;'>Failed to load content.</p>";
         });
-    });
-</script>
+    </script>

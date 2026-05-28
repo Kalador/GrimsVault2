@@ -16,7 +16,7 @@ public sealed class RawgController : Controller
     }
 
     // =====================================================================
-    //  GET /rawg  → Loader
+    //  LOADER ENTRY
     // =====================================================================
 
     [HttpGet("/rawg")]
@@ -24,14 +24,14 @@ public sealed class RawgController : Controller
     {
         return View("_Loader", new LoaderModel
         {
-            Message = "Loading recently scraped metadata...",
-            TargetUrl = Url.Action("IndexPost", "Rawg"),
-            TargetAction = "LoadRecentScrapes"
+            Message = "Loading...",
+            TargetUrl = "/rawg",
+            TargetAction = "LoadRecent"
         });
     }
 
     // =====================================================================
-    //  POST /rawg → Loader router
+    //  LOADER ROUTER
     // =====================================================================
 
     [HttpPost("/rawg")]
@@ -40,104 +40,80 @@ public sealed class RawgController : Controller
     {
         return action switch
         {
-            "LoadRecentScrapes" => await LoadRecentScrapes(),
+            "LoadRecent" => await LoadRecent(),
             "RunScrape" => await RunScrape(),
-            _ => BadRequest($"Unknown loader action: {action}")
+            _ => BadRequest()
         };
     }
 
-    // =====================================================================
-    //  ACTION: Recent Scrapes
-    // =====================================================================
-
-    private async Task<IActionResult> LoadRecentScrapes()
+    private async Task<IActionResult> LoadRecent()
     {
         var model = await _rawg.GetRecentScrapesAsync();
-        model.Meta["Title"] = $"Recently Scraped: {model.Items.Count} Games";
-
-        model.PageButtons.Add(new PageContentButton
-        {
-            Text = "Scrape More",
-            ActionUrl = "/rawg/scrape"
-        });
-
         return await ViewModeResult.BuildAsync(this, _viewMode, model);
     }
-
-    // =====================================================================
-    //  ACTION: Begin Scrape
-    // =====================================================================
-
-    [HttpPost("/rawg/scrape")]
-    public IActionResult Scrape()
-    {
-        return View("_Loader", new LoaderModel
-        {
-            Message = "Scraping. Please wait...",
-            TargetUrl = Url.Action("IndexPost", "Rawg"),
-            TargetAction = "RunScrape"
-        });
-    }
-
-    // =====================================================================
-    //  ACTION: Run Scrape
-    // =====================================================================
 
     private async Task<IActionResult> RunScrape()
     {
         var model = await _rawg.RunScrapeAsync();
-        model.Meta["Title"] = $"Scrape Results: {model.Items.Count} Updated";
-
-        model.PageButtons.Add(new PageContentButton
-        {
-            Text = "Scrape More",
-            ActionUrl = "/rawg/scrape"
-        });
-
         return await ViewModeResult.BuildAsync(this, _viewMode, model);
     }
 
     // =====================================================================
-    //  ACTION: Search (GET)
+    //  SEARCH (GET → LOADER)
     // =====================================================================
 
     [HttpGet("/rawg/search")]
     public IActionResult Search([FromQuery] string id, [FromQuery] string? query)
     {
+        // IMPORTANT:
+        // The loader ONLY forwards the URL.
+        // So id/query MUST be in TargetUrl.
         return View("_Loader", new LoaderModel
         {
-            Message = "Searching RAWG...",
-            TargetUrl = Url.Action("SearchPost", "Rawg", new { id, query }),
+            Message = "Searching...",
+            TargetUrl = $"/rawg/search?id={id}&query={query}",
             TargetAction = "LoadSearch"
         });
     }
 
-
     // =====================================================================
-    //  ACTION: Search (POST)
+    //  SEARCH (POST → ROUTER)
     // =====================================================================
 
     [HttpPost("/rawg/search")]
-    public async Task<IActionResult> SearchPost(
-        [FromQuery] string id,
-        [FromQuery] string? query)
+    public async Task<IActionResult> SearchRouter(
+        [FromHeader(Name = "X-Loader-Action")] string action,
+        string? id,
+        string? query)
+    {
+        return action switch
+        {
+            "LoadSearch" => await LoadSearch(id, query),
+            _ => BadRequest()
+        };
+    }
+
+    // =====================================================================
+    //  SEARCH (LOGIC)
+    // =====================================================================
+
+    private async Task<IActionResult> LoadSearch(string id, string? query)
     {
         var model = await _rawg.BuildSearchModelAsync(id, query);
         return await ViewModeResult.BuildAsync(this, _viewMode, model);
     }
 
-
     // =====================================================================
-    //  ACTION: Apply Match
+    //  APPLY MATCH
     // =====================================================================
 
     [HttpPost("/rawg/apply")]
     public async Task<IActionResult> Apply(
-        [FromForm(Name = "id")] string pageId,
-        [FromForm(Name = "rawgId")] int rawgId,
-        [FromForm(Name = "overwriteName")] bool overwriteName = false)
+        [FromForm] string id,
+        [FromForm] int rawgId,
+        [FromForm] bool overwriteName)
     {
-        var model = await _rawg.ApplyMatchAndBuildSearchModelAsync(pageId, rawgId, overwriteName);
+        var model = await _rawg.ApplyMatchAndBuildSearchModelAsync(id, rawgId, overwriteName);
         return await ViewModeResult.BuildAsync(this, _viewMode, model);
     }
 }
