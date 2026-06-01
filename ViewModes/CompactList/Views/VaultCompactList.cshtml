@@ -15,62 +15,71 @@
         .ToList();
 }
 
+<div class="vault-page">
 
-<div class="vault-header">
+    <div class="vault-header">
 
-    @* ------------------------------------------------------------
-       Page Title
-       ------------------------------------------------------------ *@
-    @if (Model.Meta.TryGetValue("Title", out var titleObj) && titleObj is string title)
-    {
-        <h2 class="vault-title">@title</h2>
-    }
-
-    @* ------------------------------------------------------------
-       Page-level buttons
-       ------------------------------------------------------------ *@
-    @if (Model.PageButtons?.Any() == true)
-    {
-        <div class="vault-pagebuttons">
-            @foreach (var btn in Model.PageButtons)
-            {
-                <form method="post" action="@btn.ActionUrl" class="vault-pagebutton-form">
-                    <button class="btn">@btn.Text</button>
-                </form>
-            }
-        </div>
-    }
-</div>
-
-@* ------------------------------------------------------------
-   Page-level inputs
-   ------------------------------------------------------------ *@
-@if (Model.Inputs?.Any() == true)
-{
-    <div class="vault-inputs">
-        @foreach (var input in Model.Inputs)
+        @* ------------------------------------------------------------
+           Page Title
+           ------------------------------------------------------------ *@
+        @if (Model.Meta.TryGetValue("Title", out var titleObj) && titleObj is string title)
         {
-            <div class="vault-input">
-                @if (!string.IsNullOrWhiteSpace(input.Label))
-                {
-                    <label for="@input.Name">@input.Label</label>
-                }
+            <h2 class="vault-title">@title</h2>
+        }
+        @if (Model.Meta.TryGetValue("Subtitle", out var subTitleObj) && subTitleObj is string subtitle)
+        {
+            <h2 class="vault-subtitle">@subtitle</h2>
+        }
 
-                <input type="@input.Type"
-                       id="@input.Name"
-                       name="@input.Name"
-                       value="@input.Value" />
+
+
+        @* ------------------------------------------------------------
+           Page-level buttons
+           ------------------------------------------------------------ *@
+        @if (Model.PageButtons?.Any() == true)
+        {
+            <div class="vault-pagebuttons">
+                @foreach (var btn in Model.PageButtons)
+                {
+                    <form method="post" action="@btn.ActionUrl" class="vault-pagebutton-form">
+                        <button class="btn">@btn.Text</button>
+                    </form>
+                }
             </div>
         }
     </div>
-}
 
-@* ------------------------------------------------------------
-   Flat CompactList (no grouping)
-   ------------------------------------------------------------ *@
-<div class="compactlist">
-    @foreach (var item in items)
+    @* ------------------------------------------------------------
+       Page-level inputs
+       ------------------------------------------------------------ *@
+    @if (Model.Inputs?.Any() == true)
     {
-        @await Html.PartialAsync("/ViewModes/CompactList/Views/_VaultCard.cshtml", item)
+        <div class="vault-inputs">
+            @foreach (var input in Model.Inputs)
+            {
+                <div class="vault-input">
+                    @if (!string.IsNullOrWhiteSpace(input.Label))
+                    {
+                        <label for="@input.Name">@input.Label</label>
+                    }
+
+                    <input type="@input.Type"
+                           id="@input.Name"
+                           name="@input.Name"
+                           value="@input.Value" />
+                </div>
+            }
+        </div>
     }
+
+    @* ------------------------------------------------------------
+       Flat CompactList (no grouping)
+       ------------------------------------------------------------ *@
+    <div class="compactlist">
+        @foreach (var item in items)
+        {
+            @await Html.PartialAsync("/ViewModes/CompactList/Views/_VaultCard.cshtml", item)
+        }
+    </div>
+
 </div>

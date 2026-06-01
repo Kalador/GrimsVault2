@@ -63,18 +63,21 @@ public sealed class RawgController : Controller
     // =====================================================================
 
     [HttpGet("/rawg/search")]
-    public IActionResult Search([FromQuery] string id, [FromQuery] string? query)
+    public IActionResult Search(
+        [FromQuery] string id,
+        [FromQuery] string? query,
+        [FromQuery] string? slug)
     {
-        // IMPORTANT:
-        // The loader ONLY forwards the URL.
-        // So id/query MUST be in TargetUrl.
+        bool slugFlag = slug == "on" || slug == "true";
+
         return View("_Loader", new LoaderModel
         {
             Message = "Searching...",
-            TargetUrl = $"/rawg/search?id={id}&query={query}",
+            TargetUrl = Url.Action("Search", "Rawg", new { id, query, slug = slugFlag }),
             TargetAction = "LoadSearch"
         });
     }
+
 
     // =====================================================================
     //  SEARCH (POST → ROUTER)
@@ -82,24 +85,29 @@ public sealed class RawgController : Controller
 
     [HttpPost("/rawg/search")]
     public async Task<IActionResult> SearchRouter(
-        [FromHeader(Name = "X-Loader-Action")] string action,
-        string? id,
-        string? query)
+    [FromHeader(Name = "X-Loader-Action")] string action,
+    [FromQuery] string? id,
+    [FromQuery] string? query,
+    [FromQuery] bool slug)
     {
         return action switch
         {
-            "LoadSearch" => await LoadSearch(id, query),
+            "LoadSearch" => await LoadSearch(id, query, slug),
             _ => BadRequest()
         };
     }
+
 
     // =====================================================================
     //  SEARCH (LOGIC)
     // =====================================================================
 
-    private async Task<IActionResult> LoadSearch(string id, string? query)
+    private async Task<IActionResult> LoadSearch(string? id, string? query, bool? slug)
     {
-        var model = await _rawg.BuildSearchModelAsync(id, query);
+        if (string.IsNullOrWhiteSpace(id))
+            return BadRequest("Missing id");
+
+        var model = await _rawg.BuildSearchModelAsync(id, query, slug);
         return await ViewModeResult.BuildAsync(this, _viewMode, model);
     }
 

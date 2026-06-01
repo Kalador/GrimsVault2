@@ -227,3 +227,11 @@ a {
 .vault-pagebutton-form {
     margin: 0;
 }
+
+
+.vault-subtitle {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: -0.25rem;
+    margin-bottom: 0.75rem;
+}

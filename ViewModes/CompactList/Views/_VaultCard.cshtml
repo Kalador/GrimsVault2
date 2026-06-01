@@ -1,7 +1,6 @@
 ﻿@model Vault.Core.Internal.PageContentItem
 
-<div class="compactlist-card @(Model.HasError ? "has-error" : "")"
-     data-search-card="@(Model.Meta.ContainsKey("is-search-card") ? "true" : "false")">
+<div class="compactlist-card @(Model.HasError ? "has-error" : "")">
 
     <div class="compactlist-content">
 
@@ -12,8 +11,7 @@
         }
 
         @* Secondary row *@
-        @if (!Model.Meta.ContainsKey("is-search-card"))
-        {
+        @{
             string? statusText = null;
 
             if (Model.Meta.TryGetValue("status", out var statusObj) &&
@@ -22,20 +20,20 @@
             {
                 statusText = s;
             }
-
-            <div class="item-secondary-row">
-                <span class="item-group">@Model.Group</span>
-
-                @if (Model.HasError)
-                {
-                    <span class="badge badge-error">Error</span>
-                }
-                else if (!string.IsNullOrWhiteSpace(statusText))
-                {
-                    <span class="badge badge-ok">@statusText</span>
-                }
-            </div>
         }
+
+        <div class="item-secondary-row">
+            <span class="item-group">@Model.Group</span>
+
+            @if (Model.HasError)
+            {
+                <span class="badge badge-error">Error</span>
+            }
+            else if (!string.IsNullOrWhiteSpace(statusText))
+            {
+                <span class="badge badge-ok">@statusText</span>
+            }
+        </div>
 
         @* Thumbnails *@
         @if (Model.Meta.TryGetValue("thumbnails", out var thumbObj) &&
@@ -73,75 +71,76 @@
             <div class="item-footer">@Model.SecondFooter</div>
         }
 
-        @* Inline search form (GET, like default search) *@
-        @if (Model.Meta.ContainsKey("search-id"))
+        @* ELEMENTS BLOCK *@
+        @if (Model.Elements?.Any() == true)
         {
-            var sid = (string)Model.Meta["search-id"];
-            var initialQuery = Model.Meta.TryGetValue("search-query", out var q)
-                ? q?.ToString()
-                : Model.Primary;
-
-            <form method="get"
-                  action="/rawg/search"
+            <form method="@Model.FormMethod"
+                  action="@Model.FormAction"
                   class="inline-search-form">
 
-                <input type="hidden" name="id" value="@sid" />
-
-                <input type="text"
-                       name="query"
-                       class="inline-search-input"
-                       placeholder="Search..."
-                       value="@initialQuery" />
-
-                <label class="inline-search-slug">
-                    <input type="checkbox" name="slug" />
-                    Slug?
-                </label>
-
-                <button class="btn item-button">Search</button>
-            </form>
-        }
-
-        @* Action buttons *@
-        @if (Model.Buttons?.Any() == true)
-        {
-            <div class="item-buttons">
-                @foreach (var btn in Model.Buttons)
+                @foreach (var el in Model.Elements)
                 {
-                    if (btn.ActionUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                    switch (el.Type)
                     {
-                        <a href="@btn.ActionUrl"
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               class="btn item-button item-button-link">
-                            @btn.Text
-                        </a>
-                    }
-                    else
-                    {
-                        <form method="post"
-                              action="@btn.ActionUrl"
-                              class="item-button-form">
-                            <button class="btn item-button">@btn.Text</button>
-                        </form>
+                        case Vault.Core.Internal.PageContentElementType.Input:
+                            <input type="text"
+                                   name="@el.Name"
+                                   value="@el.Value"
+                                   placeholder="@el.Placeholder"
+                                   class="inline-search-input" />
+
+                            break;
+
+                        case Vault.Core.Internal.PageContentElementType.Checkbox:
+                            <label class="inline-search-checkbox">
+                                <input type="checkbox"
+                                       name="@el.Name"
+                                @(el.Checked ? "checked" : "") />
+                                @el.Label
+                            </label>
+                            break;
+
+                        case Vault.Core.Internal.PageContentElementType.Button:
+                            <button class="item-button"
+                                    formaction="@el.ActionUrl">
+                                @el.Text
+                            </button>
+                            break;
+
+                        case Vault.Core.Internal.PageContentElementType.Hidden:
+                            <input type="hidden"
+                                   name="@el.Name"
+                                   value="@el.Value" />
+                            break;
+
                     }
                 }
-            </div>
+            </form>
         }
 
     </div>
 
-    @* Retry overlay only for errors *@
+    @* CLICKABLE OVERLAY LOGIC *@
     @{
-        bool hasRetryUrl =
-            Model.HasError &&
+        string? retryUrl = null;
+
+        if (Model.HasError &&
             Model.Meta.TryGetValue("retry-url", out var retryObj) &&
-            retryObj is string retryUrl &&
-            !string.IsNullOrWhiteSpace(retryUrl);
+            retryObj is string r &&
+            !string.IsNullOrWhiteSpace(r))
+        {
+            retryUrl = r;
+        }
+
+        string? cardUrl = Model.Url;
     }
 
-    @if (hasRetryUrl)
+    @if (!string.IsNullOrWhiteSpace(retryUrl))
     {
-        <a href="@Model.Meta["retry-url"]" class="compactlist-overlay"></a>
+        <a href="@retryUrl" class="compactlist-overlay"></a>
+    }
+    else if (!string.IsNullOrWhiteSpace(cardUrl))
+    {
+        <a href="@cardUrl" class="compactlist-overlay"></a>
     }
 </div>

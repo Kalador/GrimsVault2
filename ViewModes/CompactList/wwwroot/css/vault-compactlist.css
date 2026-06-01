@@ -1,4 +1,29 @@
 ﻿/* ------------------------------------------------------------
+   Page wrapper (align header with cards)
+   ------------------------------------------------------------ */
+.vault-page {
+    width: 100%;
+    max-width: 600px; /* match .compactlist */
+    margin: 0 auto;
+}
+
+/* ------------------------------------------------------------
+   Header alignment
+   ------------------------------------------------------------ */
+.vault-header {
+    text-align: left;
+    margin-bottom: 1rem;
+}
+
+/* Subtitle (platform) */
+.vault-subtitle {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: -0.25rem;
+    margin-bottom: 0.75rem;
+}
+
+/* ------------------------------------------------------------
    CompactList container
    ------------------------------------------------------------ */
 .compactlist {
@@ -162,7 +187,7 @@
     }
 
 /* ------------------------------------------------------------
-   Item-level buttons (cleaned + deduped)
+   Item-level buttons
    ------------------------------------------------------------ */
 .item-buttons {
     margin-top: 0.6rem;
@@ -198,7 +223,7 @@
     }
 
 /* ------------------------------------------------------------
-   Inline search form
+   Inline search form (Elements)
    ------------------------------------------------------------ */
 .inline-search-form {
     margin-top: 0.5rem;
@@ -216,6 +241,19 @@
     font-size: 0.85rem;
 }
 
+/* Checkbox alignment */
+.inline-search-checkbox {
+    height: 2em;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+}
+
+    .inline-search-checkbox input[type="checkbox"] {
+        transform: scale(1.2);
+    }
+
 /* ------------------------------------------------------------
    Clickable overlay
    ------------------------------------------------------------ */
@@ -228,7 +266,7 @@
 }
 
 /* ------------------------------------------------------------
-   Thumbnail row (generic, feature-agnostic)
+   Thumbnail row
    ------------------------------------------------------------ */
 .item-thumbnails {
     display: flex;
@@ -237,14 +275,13 @@
     padding: 0;
     flex-wrap: nowrap;
     overflow-x: auto;
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
 }
 
     .item-thumbnails::-webkit-scrollbar {
-        display: none; /* Chrome/Safari */
+        display: none;
     }
 
-/* Individual thumbnail */
 .thumbnail {
     width: 48px;
     height: 48px;
@@ -261,7 +298,7 @@
     }
 
 /* ------------------------------------------------------------
-   Lightbox overlay (generic)
+   Lightbox
    ------------------------------------------------------------ */
 .thumbnail-lightbox {
     position: fixed;
@@ -283,9 +320,6 @@
     animation: popInLightbox 0.15s ease-out;
 }
 
-/* ------------------------------------------------------------
-   Lightbox animations
-   ------------------------------------------------------------ */
 @keyframes fadeInLightbox {
     from {
         background: rgba(0,0,0,0);
@@ -308,7 +342,9 @@
     }
 }
 
-/* Add spacing *after* the search card only */
+/* ------------------------------------------------------------
+   Extra spacing after search card
+   ------------------------------------------------------------ */
 .compactlist-card[data-search-card="true"] {
     margin-bottom: 1.5rem;
 }

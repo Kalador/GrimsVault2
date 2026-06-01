@@ -151,7 +151,7 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
     //  SEARCH PAGE (Unified)
     // =====================================================================
 
-    public async Task<PageContentModel> BuildSearchModelAsync(string pageId, string? query)
+    public async Task<PageContentModel> BuildSearchModelAsync(string pageId, string? query, bool? slug)
     {
         var item = await vault.GetItem(pageId);
 
@@ -163,7 +163,7 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
             };
         }
 
-        // ⭐ FIXED: Only fallback if query is null (not empty, not whitespace)
+        // Determine final query
         query ??= item.Name ?? "";
 
         var model = new PageContentModel
@@ -171,27 +171,72 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
             Meta =
             {
                 ["Title"] = $"RAWG Search: {item.Name}",
+                ["Subtitle"] = $"Platform: {item.PlatformName}",
                 ["Mode"] = "Search",
                 ["PageId"] = item.PageId,
-                ["Platform"] = item.PlatformName ?? ""
+                ["Platform"] = item.PlatformName ?? "",
+                ["Slug"] = slug?.ToString() ?? "false"
             }
         };
 
-        // SEARCH CARD — pinned to top using invisible null-char group
-        model.Items.Add(new PageContentItem
+        // =====================================================================
+        //  SEARCH CARD (Elements-based)
+        // =====================================================================
+
+        var searchCard = new PageContentItem
         {
-            Group = "\u0000",
-            Primary = $"🎮 {item.Name ?? ""}",
-            SecondFooter = $"RAWG Search: {query}",
-            Meta =
-            {
-                ["search-id"] = item.PageId,
-                ["search-query"] = query,
-                ["is-search-card"] = "true"
-            }
+            Group = "",
+            Primary = "Search RAWG Manually",
+            FormAction = "/rawg/search",
+            FormMethod = "get"
+        };
+
+        searchCard.Elements.Add(new PageContentElement
+        {
+            Type = PageContentElementType.Input,
+            Name = "query",
+            Value = query,
+            Placeholder = "Enter alternate title..."
         });
 
-        // RAWG search
+        searchCard.Elements.Add(new PageContentElement
+        {
+            Type = PageContentElementType.Checkbox,
+            Name = "slug",
+            Label = "Slug?",
+            Checked = slug == true
+        });
+
+        searchCard.Elements.Add(new PageContentElement
+        {
+            Type = PageContentElementType.Button,
+            Text = "Search"
+        });
+
+        // Hidden ID field
+        searchCard.Elements.Add(new PageContentElement
+        {
+            Type = PageContentElementType.Hidden,
+            Name = "id",
+            Value = item.PageId
+        });
+
+        model.Items.Add(searchCard);
+
+        // =====================================================================
+        //  RAWG SEARCH LOGIC
+        // =====================================================================
+
+        if (slug == true)
+        {
+            var result = await _api.GetGameBySlugAsync(query);
+
+            if (result != null)
+                model.Items.Add(BuildMatchCard(item, result));
+
+            return model;
+        }
+
         var results = await _api.SearchRawgAsync(query, item.PlatformId);
 
         foreach (var r in results)
@@ -220,11 +265,11 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
         if (updated != null)
             await vault.UpdateItem(updated);
 
-        return await BuildSearchModelAsync(pageId, updated?.Name ?? "");
+        return await BuildSearchModelAsync(pageId, updated?.Name ?? "", slug: null);
     }
 
     // =====================================================================
-    //  MATCH CARD
+    //  MATCH CARD (Elements-based)
     // =====================================================================
 
     private PageContentItem BuildMatchCard(VaultItem item, RawgApiModels.RawgGame match)
@@ -250,27 +295,26 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
             Primary = $"🎮 {match.Name ?? "(no name)"}",
             Ticker = year is not null ? $"📅 {year}" : null,
             SecondFooter = match.DescriptionRaw,
-            ImageUrl = match.BackgroundImage,
-            Meta =
-            {
-                ["rawgId"] = match.Id,
-                ["id"] = item.PageId
-            }
+            ImageUrl = match.BackgroundImage
         };
 
         if (thumbnails?.Count > 0)
             card.Meta["thumbnails"] = string.Join(";", thumbnails);
 
-        card.Buttons.Add(new PageContentButton
+        // Save button
+        card.Elements.Add(new PageContentElement
         {
+            Type = PageContentElementType.Button,
             Text = "Save",
             ActionUrl = $"/rawg/apply?id={item.PageId}&rawgId={match.Id}"
         });
 
+        // View button
         if (!string.IsNullOrWhiteSpace(match.Slug))
         {
-            card.Buttons.Add(new PageContentButton
+            card.Elements.Add(new PageContentElement
             {
+                Type = PageContentElementType.Button,
                 Text = "View",
                 ActionUrl = $"https://rawg.io/games/{match.Slug}"
             });
@@ -280,38 +324,41 @@ public sealed class RawgService(IConfiguration config, VaultService vault) : IVa
     }
 
     // =====================================================================
-    //  RECENT SCRAPE CARD
+    //  RECENT SCRAPE CARD (NO RETRY BUTTON)
     // =====================================================================
 
-    private static PageContentItem BuildRecentScrapeCard(VaultItem item) => new()
+    private static PageContentItem BuildRecentScrapeCard(VaultItem item)
     {
-        Group = item.PlatformName ?? "Unknown Platform",
-
-        Secondary = string.Join(" ",
-            new[]
-            {
-                item.Developer is { Length: > 0 } d ? $"🛠️ {d}" : null,
-                item.Publisher is { Length: > 0 } p ? $"🏢 {p}" : null
-            }.Where(s => s != null)
-        ),
-
-        Primary = $"🎮 {item.Name ?? "(no name)"}",
-        ImageUrl = item.Media?.FirstOrDefault(),
-
-        Ticker = item.ReleaseDate is not null ? $"📅 {item.ReleaseDate:yyyy}" : null,
-
-        SecondFooter = item.Description,
-
-        HasError = string.Equals(item.ScrapeStatus, "Error", StringComparison.OrdinalIgnoreCase),
-
-        Meta =
+        var card = new PageContentItem
         {
-            ["id"] = item.PageId,
-            ["rawgId"] = item.RawgId ?? "",
-            ["status"] = item.ScrapeStatus ?? "",
-            ["retry-url"] = $"/rawg/search?id={item.PageId}&query={Uri.EscapeDataString(item.Name ?? "")}"
+            Group = item.PlatformName ?? "Unknown Platform",
+
+            Secondary = string.Join(" ",
+                new[]
+                {
+                    item.Developer is { Length: > 0 } d ? $"🛠️ {d}" : null,
+                    item.Publisher is { Length: > 0 } p ? $"🏢 {p}" : null
+                }.Where(s => s != null)
+            ),
+
+            Primary = $"🎮 {item.Name ?? "(no name)"}",
+            ImageUrl = item.Media?.FirstOrDefault(),
+
+            Ticker = item.ReleaseDate is not null ? $"📅 {item.ReleaseDate:yyyy}" : null,
+
+            SecondFooter = item.Description,
+
+            HasError = string.Equals(item.ScrapeStatus, "Error", StringComparison.OrdinalIgnoreCase)
+        };
+
+        // If error → whole card links to search page
+        if (card.HasError)
+        {
+            card.Url = $"/rawg/search?id={item.PageId}&query={Uri.EscapeDataString(item.Name ?? "")}";
         }
-    };
+
+        return card;
+    }
 
     // =====================================================================
     //  RAWG → VAULT MAPPING

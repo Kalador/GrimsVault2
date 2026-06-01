@@ -12,7 +12,7 @@
 //          -> Inputs (optional page-level input fields)
 //          -> PageButtons (global actions)
 //          -> Items (cards)
-//              -> Buttons (per‑item actions)
+//              -> Elements (ordered UI controls inside the card)
 //              -> Group (string category assigned by the feature)
 //
 //  ViewModes may interpret groups as:
@@ -28,141 +28,133 @@
 
 namespace Vault.Core.Internal;
 
-/// <summary>
-/// Represents a clickable UI action. ViewModes render these as buttons.
-/// Features populate them with the text and action URL required.
-/// </summary>
-public class PageContentButton
-{
-    /// <summary>
-    /// The text displayed on the button.
-    /// </summary>
-    public string Text { get; set; } = "";
+// ============================================================================
+//  ELEMENT TYPES
+// ============================================================================
 
-    /// <summary>
-    /// The URL to POST to when the button is clicked.
-    /// </summary>
-    public string ActionUrl { get; set; } = "";
+public enum PageContentElementType
+{
+    Input,
+    Checkbox,
+    Button,
+    Hidden
 }
 
 /// <summary>
-/// Represents a single input field rendered at the page level.
-/// ViewModes treat these generically and do not attach meaning.
-/// Features may use them for search boxes, filters, toggles, etc.
+/// A single UI control inside a card.
+/// Features populate these; ViewModes render them generically.
 /// </summary>
-public class PageContentInput
+public class PageContentElement
 {
     /// <summary>
-    /// Unique name for this input. Used as the form field name.
+    /// The type of UI element (Input, Checkbox, Button).
+    /// </summary>
+    public PageContentElementType Type { get; set; }
+
+    /// <summary>
+    /// The form field name (for inputs + checkboxes).
     /// </summary>
     public string Name { get; set; } = "";
 
     /// <summary>
-    /// Optional label displayed next to or above the input.
-    /// </summary>
-    public string Label { get; set; } = "";
-
-    /// <summary>
-    /// Optional initial value for the input.
+    /// Optional value for inputs.
     /// </summary>
     public string? Value { get; set; }
 
     /// <summary>
-    /// Input type (e.g., "text", "checkbox", "number", "hidden").
-    /// ViewModes render this directly.
+    /// Label for checkboxes.
     /// </summary>
+    public string? Label { get; set; }
+
+    /// <summary>
+    /// Whether a checkbox is checked.
+    /// </summary>
+    public bool Checked { get; set; }
+
+    /// <summary>
+    /// Button text (for Button type).
+    /// </summary>
+    public string? Text { get; set; }
+
+    /// <summary>
+    /// Optional URL for button actions.
+    /// If null, the form's action is used.
+    /// </summary>
+    public string? ActionUrl { get; set; }
+
+    public string? Placeholder { get; set; }
+}
+
+// ============================================================================
+//  PAGE-LEVEL INPUTS + BUTTONS
+// ============================================================================
+
+/// <summary>
+/// Represents a single input field rendered at the page level.
+/// ViewModes treat these generically and do not attach meaning.
+/// </summary>
+public class PageContentInput
+{
+    public string Name { get; set; } = "";
+    public string Label { get; set; } = "";
+    public string? Value { get; set; }
     public string Type { get; set; } = "text";
+    
+
 }
 
 /// <summary>
-/// Represents the full structured content of a Vault page.
-/// A ViewMode receives this model and decides how to render it.
+/// Represents a clickable UI action at the page level.
 /// </summary>
+public class PageContentButton
+{
+    public string Text { get; set; } = "";
+    public string ActionUrl { get; set; } = "";
+}
+
+// ============================================================================
+//  PAGE CONTENT MODEL
+// ============================================================================
+
 public class PageContentModel
 {
-    /// <summary>
-    /// Arbitrary metadata for the entire page.
-    /// Features may use this to pass page-level context such as titles,
-    /// subtitles, warnings, or other non-item-specific information.
-    /// </summary>
     public Dictionary<string, object> Meta { get; set; } = [];
-
-    /// <summary>
-    /// Optional input fields that apply to the entire page.
-    /// ViewModes render these above the item groups.
-    /// </summary>
     public List<PageContentInput> Inputs { get; set; } = [];
-
-    /// <summary>
-    /// Buttons that apply to the entire page (e.g., Refresh, Search, Apply Filters).
-    /// ViewModes may render these at the top of the page or in a toolbar.
-    /// </summary>
     public List<PageContentButton> PageButtons { get; set; } = [];
-
-    /// <summary>
-    /// A flat list of items. Each item carries its own Group string.
-    /// ViewModes may group these dynamically (e.g., into columns).
-    /// </summary>
     public List<PageContentItem> Items { get; set; } = [];
 }
 
-/// <summary>
-/// A single UI card. ViewModes decide how to render it (tile, row, column card, etc.).
-/// Features populate the fields with whatever data is relevant.
-/// </summary>
+// ============================================================================
+//  CARD MODEL
+// ============================================================================
+
 public class PageContentItem
 {
-    /// <summary>
-    /// The logical group/category this item belongs to.
-    /// </summary>
     public string Group { get; set; } = "";
-
-    /// <summary>
-    /// Optional secondary text (e.g., price, platform, category).
-    /// </summary>
     public string Secondary { get; set; } = "";
-
-    /// <summary>
-    /// Optional image associated with the card.
-    /// </summary>
     public string? ImageUrl { get; set; }
-
-    /// <summary>
-    /// Primary display text for the card. Could be Name, could be Price.
-    /// Use whatever property is the primary concern of any given feature.
-    /// </summary>
     public string? Primary { get; set; }
-
-    /// <summary>
-    /// Text for a scrolling ticker in the footer.
-    /// </summary>
     public string? Ticker { get; set; }
-
-    /// <summary>
-    /// Optional footer text (e.g., timestamp, status).
-    /// </summary>
     public string? SecondFooter { get; set; }
-
-    /// <summary>
-    /// Optional URL the card links to.
-    /// </summary>
     public string? Url { get; set; }
-
-    /// <summary>
-    /// Indicates whether the feature encountered an error producing this item.
-    /// ViewModes may choose to render error states differently.
-    /// </summary>
     public bool HasError { get; set; }
-
-    /// <summary>
-    /// Arbitrary metadata for ViewModes or Features to use.
-    /// ViewModes should treat this as optional and defensive.
-    /// </summary>
     public Dictionary<string, object> Meta { get; set; } = [];
 
     /// <summary>
-    /// Buttons that apply to this specific item (e.g., Track, Retry, Apply).
-    /// ViewModes render these inside the card.
+    /// Ordered UI controls inside the card.
+    /// Replaces the old Buttons list and the hardcoded search form.
     /// </summary>
-    public List<PageContentButton> Buttons { get; set; } = [];
+    public List<PageContentElement> Elements { get; set; } = [];
+
+    /// <summary>
+    /// Optional form method for the Elements block.
+    /// Defaults to GET.
+    /// </summary>
+    public string FormMethod { get; set; } = "get";
+
+    /// <summary>
+    /// Optional form action for the Elements block.
+    /// If null, ViewModes may choose not to render a form wrapper.
+    /// </summary>
+    public string? FormAction { get; set; }
 }
