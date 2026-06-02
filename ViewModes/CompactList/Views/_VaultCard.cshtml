@@ -102,10 +102,12 @@
 
                         case Vault.Core.Internal.PageContentElementType.Button:
                             <button class="item-button"
-                                    formaction="@el.ActionUrl">
+                                    formaction="@el.ActionUrl"
+                                    formtarget="@(el.FormTarget ?? "_self")">
                                 @el.Text
                             </button>
                             break;
+
 
                         case Vault.Core.Internal.PageContentElementType.Hidden:
                             <input type="hidden"

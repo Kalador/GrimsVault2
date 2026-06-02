@@ -82,7 +82,16 @@ public class PageContentElement
     /// </summary>
     public string? ActionUrl { get; set; }
 
+    //PlaceHolder Text for text etc
     public string? Placeholder { get; set; }
+
+    /// <summary>
+    /// Optional target for button actions (e.g., "_blank").
+    /// Only applies to Button elements.
+    /// </summary>
+    public string? FormTarget { get; set; }
+
+
 }
 
 // ============================================================================

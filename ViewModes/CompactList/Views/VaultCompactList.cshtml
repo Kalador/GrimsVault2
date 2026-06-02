@@ -24,12 +24,13 @@
            ------------------------------------------------------------ *@
         @if (Model.Meta.TryGetValue("Title", out var titleObj) && titleObj is string title)
         {
-            <h2 class="vault-title">@title</h2>
+            <h2 class="vault-title">@Html.Raw(title)</h2>
         }
         @if (Model.Meta.TryGetValue("Subtitle", out var subTitleObj) && subTitleObj is string subtitle)
         {
-            <h2 class="vault-subtitle">@subtitle</h2>
+            <h2 class="vault-subtitle">@Html.Raw(subtitle)</h2>
         }
+
 
 
 

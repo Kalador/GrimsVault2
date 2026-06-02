@@ -24,7 +24,7 @@ public sealed class RawgController : Controller
     {
         return View("_Loader", new LoaderModel
         {
-            Message = "Loading...",
+            Message = "Loading recent scrapes...",
             TargetUrl = "/rawg",
             TargetAction = "LoadRecent"
         });
@@ -78,17 +78,16 @@ public sealed class RawgController : Controller
         });
     }
 
-
     // =====================================================================
     //  SEARCH (POST → ROUTER)
     // =====================================================================
 
     [HttpPost("/rawg/search")]
     public async Task<IActionResult> SearchRouter(
-    [FromHeader(Name = "X-Loader-Action")] string action,
-    [FromQuery] string? id,
-    [FromQuery] string? query,
-    [FromQuery] bool slug)
+        [FromHeader(Name = "X-Loader-Action")] string action,
+        [FromQuery] string? id,
+        [FromQuery] string? query,
+        [FromQuery] bool slug)
     {
         return action switch
         {
@@ -96,11 +95,6 @@ public sealed class RawgController : Controller
             _ => BadRequest()
         };
     }
-
-
-    // =====================================================================
-    //  SEARCH (LOGIC)
-    // =====================================================================
 
     private async Task<IActionResult> LoadSearch(string? id, string? query, bool? slug)
     {
@@ -112,16 +106,61 @@ public sealed class RawgController : Controller
     }
 
     // =====================================================================
-    //  APPLY MATCH
+    //  APPLY MATCH (GET → LOADER)
+    // =====================================================================
+
+    [HttpGet("/rawg/apply")]
+    public IActionResult ApplyLoader(
+        [FromQuery] string id,
+        [FromQuery] int rawgId,
+        [FromQuery] string? overwriteName)
+    {
+        return View("_Loader", new LoaderModel
+        {
+            Message = "Applying...",
+            TargetUrl = Url.Action("ApplyRouter", "Rawg", new { id, rawgId, overwriteName }),
+            TargetAction = "ApplyMatch"
+        });
+    }
+
+    // =====================================================================
+    //  APPLY MATCH (POST → ROUTER)
     // =====================================================================
 
     [HttpPost("/rawg/apply")]
-    public async Task<IActionResult> Apply(
-        [FromForm] string id,
-        [FromForm] int rawgId,
-        [FromForm] bool overwriteName)
+    public async Task<IActionResult> ApplyRouter(
+        [FromHeader(Name = "X-Loader-Action")] string action,
+        [FromQuery] string id,
+        [FromQuery] int rawgId,
+        [FromQuery] string? overwriteName)
     {
-        var model = await _rawg.ApplyMatchAndBuildSearchModelAsync(id, rawgId, overwriteName);
-        return await ViewModeResult.BuildAsync(this, _viewMode, model);
+        if (action != "ApplyMatch")
+            return BadRequest();
+
+        bool overwrite = overwriteName == "on" || overwriteName == "true";
+
+        // Apply the RAWG match
+        await _rawg.ApplyMatchAsync(id, rawgId, overwrite);
+
+        //reload
+        return await ViewModeResult.BuildAsync(this, _viewMode, await _rawg.GetRecentScrapesAsync());
+
+
+    }
+
+
+    // =====================================================================
+    //  SCRAPE (GET → LOADER)
+    // =====================================================================
+
+    [HttpPost("/rawg/scrape")]
+    public IActionResult Scrape()
+    {
+        return View("_Loader", new LoaderModel
+        {
+            Message = "Scraping...",
+            TargetUrl = "/rawg",
+            TargetAction = "RunScrape"
+        });
     }
 }

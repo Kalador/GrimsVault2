@@ -243,7 +243,6 @@
 
 /* Checkbox alignment */
 .inline-search-checkbox {
-    height: 2em;
     display: flex;
     align-items: center;
     gap: 0.35rem;
