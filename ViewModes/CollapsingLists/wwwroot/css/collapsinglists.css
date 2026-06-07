@@ -1,0 +1,231 @@
+﻿/* -------------------------------------------------- */
+/* ROOT CONTAINER                                      */
+/* -------------------------------------------------- */
+
+.collapsinglists {
+    padding: 0.25rem 0;
+    width: 100%;
+    max-width: 650px;
+    margin: 0 auto;
+}
+
+
+/* -------------------------------------------------- */
+/* GROUP WRAPPER + HEADER                              */
+/* -------------------------------------------------- */
+
+.collapsing-group {
+    margin-bottom: 0.75rem;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.collapsing-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.6rem;
+    background: #e9ecef;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.95rem;
+    line-height: 1.2;
+}
+
+    .collapsing-header.collapsed .collapsing-toggle-icon {
+        transform: rotate(-90deg);
+    }
+
+.collapsing-toggle-icon {
+    transition: transform 0.15s ease;
+}
+
+.collapsing-title {
+    font-weight: 600;
+    flex: 1;
+}
+
+/* NEW: use core muted colour */
+.collapsing-count {
+    font-size: 0.75rem;
+    color: var(--vault-muted, #666);
+}
+
+
+/* -------------------------------------------------- */
+/* COLLAPSIBLE BODY                                    */
+/* -------------------------------------------------- */
+
+.collapsing-body {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-top: none;
+}
+
+    .collapsing-body.collapsed {
+        display: none;
+    }
+
+
+/* -------------------------------------------------- */
+/* CARD (ROW‑STYLE)                                    */
+/* -------------------------------------------------- */
+
+.collapsing-card {
+    position: relative;
+    padding: 0.55rem 0.6rem;
+    /* NEW: use core divider utility */
+    border-top: none;
+}
+
+    .collapsing-card + .collapsing-card {
+        /* NEW: apply divider between cards */
+        border-top: 1px solid #eee; /* or add class="vault-divider-top" in markup */
+    }
+
+    .collapsing-card.has-error {
+        background: #fff4f4;
+        border-left: 3px solid #d9534f;
+    }
+
+
+/* -------------------------------------------------- */
+/* CARD INNER LAYOUT                                   */
+/* -------------------------------------------------- */
+
+.collapsing-card-inner {
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-start;
+}
+
+
+/* -------------------------------------------------- */
+/* THUMBNAIL                                           */
+/* -------------------------------------------------- */
+
+/* NEW: remove old 64x64 block entirely */
+/* NEW: use core .vault-thumb (48x48) */
+
+.card-thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .card-thumb img,
+    .thumb-img {
+        /* NEW: rely on .vault-thumb */
+    }
+
+.thumb-placeholder {
+    width: 48px;
+    height: 48px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    color: var(--vault-muted-light, #777);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* -------------------------------------------------- */
+/* MAIN CONTENT (DENSE + OLD‑STYLE)                    */
+/* -------------------------------------------------- */
+
+.card-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    /* NEW: use core tight rhythm */
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.item-primary {
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.2;
+    /* NEW: use core ellipsis */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.item-secondary {
+    font-size: 0.85rem;
+    color: var(--vault-muted, #666);
+    line-height: 1.2;
+}
+
+.item-ticker {
+    font-size: 0.8rem;
+    color: var(--vault-muted, #666);
+    /* NEW: use core ellipsis */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.item-footer {
+    font-size: 0.8rem;
+    color: var(--vault-muted-light, #777);
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+
+/* -------------------------------------------------- */
+/* ELEMENTS BLOCK                                      */
+/* -------------------------------------------------- */
+
+.collapsing-elements {
+    margin-top: 0.4rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.collapsing-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.collapsing-button {
+    padding: 0.25rem 0.5rem;
+    background: #007bff;
+    color: #fff;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+    .collapsing-button:hover {
+        background: #0069d9;
+    }
+
+
+/* -------------------------------------------------- */
+/* CLICKABLE OVERLAY                                   */
+/* -------------------------------------------------- */
+
+/* NEW: remove local overlay, use core .vault-overlay */
+.collapsing-overlay {
+}
+
+
+/* -------------------------------------------------- */
+/* MUTED TEXT (REMOVE — now in core)                   */
+/* -------------------------------------------------- */
+
+.text-muted,
+.muted {
+    /* NEW: no longer needed */
+}

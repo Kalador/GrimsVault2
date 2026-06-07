@@ -8,9 +8,6 @@
     gap: 1rem;
 }
 
-
-
-
 .column {
     display: block;
 }
@@ -51,13 +48,11 @@
     box-sizing: border-box;
 }
 
-    /* Loading state (grey-out + block clicks) */
     .column-card.loading {
         opacity: 0.5;
         pointer-events: none;
     }
 
-    /* Flash highlight after refresh */
     .column-card.refreshed {
         animation: flash 0.6s ease-out;
     }
@@ -90,7 +85,6 @@
     display: flex;
     flex-direction: column;
     min-height: 80px;
-
 }
 
 
@@ -110,14 +104,12 @@
     margin-bottom: 0.15rem;
 }
 
-/* Title ticker window */
 .column-card-title-ticker {
     max-width: 100% !important;
     overflow: hidden;
     display: block;
 }
 
-/* Title ticker text */
 .column-card-title .ticker-content {
     font-size: 1rem;
     font-weight: 600;
@@ -138,36 +130,21 @@
     min-width: 0;
 }
 
-/* ticker width is ViewMode-specific */
 .column-card .ticker {
     flex: 1;
     overflow: hidden;
     margin-right: 0.25rem;
-    max-width:80%
+    max-width: 80%;
 }
 
 .column-card .ticker-content {
     font-size: 0.8rem;
-    color: #555;
-}
-
-.ticker {
-    min-width: 0;
-    overflow: hidden;
-    flex-shrink: 1;
-}
-
-.ticker-content {
-    display: block;
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    color: var(--vault-muted, #666);
 }
 
 .column-card-timestamp {
     font-size: 0.7rem;
-    color: #777;
+    color: var(--vault-muted-light, #777);
     white-space: nowrap;
 }
 
@@ -194,8 +171,15 @@
 
 
 /* -------------------------------------------------- */
-/* IMAGE PLACEHOLDER                                   */
+/* IMAGE PLACEHOLDER / THUMBNAIL                       */
 /* -------------------------------------------------- */
+
+/* FINAL: Correct, flex-safe, CEX-accurate thumbnail */
+.column-thumb {
+    width: auto !important;
+    height: 80px !important;
+
+}
 
 .column-card-noimage {
     width: 80px;
@@ -220,14 +204,14 @@
     flex-direction: column;
     align-items: center;
     padding: 20px;
-    width:100%;
+    width: 100%;
 }
 
     .retry-loading .spinner {
         width: 24px;
         height: 24px;
-        border: 3px solid #ffcccc; /* pale red background ring */
-        border-top-color: #8b0000; /* DARK RED spinner arc */
+        border: 3px solid #ffcccc;
+        border-top-color: #8b0000;
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
     }
@@ -235,6 +219,7 @@
 .column-card.loading .column-card-inner {
     align-items: center;
     justify-content: center;
+    padding: 0.75rem 1rem 0.5rem;
 }
 
 @keyframes spin {
@@ -242,5 +227,3 @@
         transform: rotate(360deg);
     }
 }
-
-

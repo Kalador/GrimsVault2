@@ -1,0 +1,128 @@
+﻿@model Vault.Core.Internal.PageContentItem
+
+<div class="collapsing-card @(Model.HasError ? "has-error" : "")">
+
+    <div class="collapsing-card-inner">
+
+        @* Thumbnail *@
+        <div class="card-thumb">
+            @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+            {
+                <img src="@Model.ImageUrl"
+                     alt=""
+                     loading="lazy"
+                     class="vault-thumb" />
+            }
+            else
+            {
+                <div class="thumb-placeholder">No Image</div>
+            }
+        </div>
+
+        <div class="card-main vault-gap-tight vault-tight">
+
+            @* Primary text *@
+            @if (!string.IsNullOrWhiteSpace(Model.Primary))
+            {
+                <div class="item-primary vault-ellipsis">
+                    @Html.Raw(Model.Primary)
+                </div>
+            }
+
+            @* Secondary text *@
+            @if (!string.IsNullOrWhiteSpace(Model.Secondary))
+            {
+                <div class="item-secondary vault-muted">
+                    @Html.Raw(Model.Secondary)
+                </div>
+            }
+
+            @* Ticker *@
+            @if (!string.IsNullOrWhiteSpace(Model.Ticker))
+            {
+                <div class="item-ticker vault-muted vault-ellipsis">
+                    @Html.Raw(Model.Ticker)
+                </div>
+            }
+
+            @* Footer *@
+            @if (!string.IsNullOrWhiteSpace(Model.SecondFooter))
+            {
+                <div class="item-footer vault-muted-light">
+                    @Html.Raw(Model.SecondFooter)
+                </div>
+            }
+
+            @* Elements block *@
+            @if (Model.Elements?.Any() == true)
+            {
+                <form method="@Model.FormMethod"
+                      action="@Model.FormAction"
+                      class="collapsing-elements">
+
+                    @foreach (var el in Model.Elements)
+                    {
+                        switch (el.Type)
+                        {
+                            case Vault.Core.Internal.PageContentElementType.Input:
+                                <input type="text"
+                                       name="@el.Name"
+                                       value="@el.Value"
+                                       placeholder="@el.Placeholder" />
+                                break;
+
+                            case Vault.Core.Internal.PageContentElementType.Checkbox:
+                                <label class="collapsing-checkbox">
+                                    <input type="checkbox"
+                                           name="@el.Name"
+                                    @(el.Checked ? "checked" : "") />
+                                    @el.Label
+                                </label>
+                                break;
+
+                            case Vault.Core.Internal.PageContentElementType.Button:
+                                <button class="collapsing-button"
+                                        formaction="@el.ActionUrl"
+                                        formtarget="@(el.FormTarget ?? "_self")">
+                                    @el.Text
+                                </button>
+                                break;
+
+                            case Vault.Core.Internal.PageContentElementType.Hidden:
+                                <input type="hidden"
+                                       name="@el.Name"
+                                       value="@el.Value" />
+                                break;
+                        }
+                    }
+                </form>
+            }
+
+        </div>
+
+    </div>
+
+    @* CLICKABLE OVERLAY *@
+    @{
+        string? retryUrl = null;
+
+        if (Model.HasError &&
+            Model.Meta.TryGetValue("retry-url", out var retryObj) &&
+            retryObj is string r &&
+            !string.IsNullOrWhiteSpace(r))
+        {
+            retryUrl = r;
+        }
+
+        string? cardUrl = Model.Url;
+    }
+
+    @if (!string.IsNullOrWhiteSpace(retryUrl))
+    {
+        <a href="@retryUrl" class="vault-overlay"></a>
+    }
+    else if (!string.IsNullOrWhiteSpace(cardUrl))
+    {
+        <a href="@cardUrl" class="vault-overlay"></a>
+    }
+</div>

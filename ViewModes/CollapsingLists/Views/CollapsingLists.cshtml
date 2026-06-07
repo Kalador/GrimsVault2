@@ -1,0 +1,89 @@
+﻿@model Vault.Core.Internal.PageContentModel
+
+@{
+    // Group items by their Group key
+    var grouped = Model.Items
+        .GroupBy(i => i.Group ?? "")
+        .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+        .ToList();
+}
+
+<div class="vault-page">
+
+    <div class="vault-header">
+
+        @* Page Title *@
+        @if (Model.Meta.TryGetValue("Title", out var titleObj) && titleObj is string title)
+        {
+            <h2 class="vault-title">@Html.Raw(title)</h2>
+        }
+
+        @* Page Subtitle *@
+        @if (Model.Meta.TryGetValue("Subtitle", out var subObj) && subObj is string subtitle)
+        {
+            <h2 class="vault-subtitle">@Html.Raw(subtitle)</h2>
+        }
+
+        @* Page-level buttons *@
+        @if (Model.PageButtons?.Any() == true)
+        {
+            <div class="vault-pagebuttons">
+                @foreach (var btn in Model.PageButtons)
+                {
+                    <form method="post" action="@btn.ActionUrl" class="vault-pagebutton-form">
+                        <button class="btn">@btn.Text</button>
+                    </form>
+                }
+            </div>
+        }
+    </div>
+
+    @* Page-level inputs *@
+    @if (Model.Inputs?.Any() == true)
+    {
+        <div class="vault-inputs">
+            @foreach (var input in Model.Inputs)
+            {
+                <div class="vault-input">
+                    @if (!string.IsNullOrWhiteSpace(input.Label))
+                    {
+                        <label for="@input.Name">@input.Label</label>
+                    }
+
+                    <input type="@input.Type"
+                           id="@input.Name"
+                           name="@input.Name"
+                           value="@input.Value" />
+                </div>
+            }
+        </div>
+    }
+
+    <div class="collapsinglists">
+
+        @foreach (var group in grouped)
+        {
+            var groupName = group.Key;
+            var items = group.ToList();
+
+            <section class="collapsing-group">
+
+                <header class="collapsing-header">
+                    <span class="collapsing-toggle-icon">▼</span>
+                    <span class="collapsing-title">@groupName</span>
+                    <span class="collapsing-count">(@items.Count)</span>
+                </header>
+
+                <div class="collapsing-body">
+                    @foreach (var item in items)
+                    {
+                        @await Html.PartialAsync("/ViewModes/CollapsingLists/Views/_Card.cshtml", item)
+                    }
+                </div>
+
+            </section>
+        }
+
+    </div>
+
+</div>

@@ -3,7 +3,7 @@
    ------------------------------------------------------------ */
 .vault-page {
     width: 100%;
-    max-width: 600px; /* match .compactlist */
+    max-width: 600px;
     margin: 0 auto;
 }
 
@@ -16,9 +16,10 @@
 }
 
 /* Subtitle (platform) */
+/* NEW: use core muted colour */
 .vault-subtitle {
     font-size: 0.9rem;
-    color: #666;
+    color: var(--vault-muted, #666);
     margin-top: -0.25rem;
     margin-bottom: 0.75rem;
 }
@@ -34,7 +35,7 @@
 }
 
 /* ------------------------------------------------------------
-   Page-level inputs (unused for RAWG now, but kept for other features)
+   Page-level inputs
    ------------------------------------------------------------ */
 .vault-inputs {
     margin: 0.75rem 0 1rem 0;
@@ -122,51 +123,56 @@
    ------------------------------------------------------------ */
 
 /* Title row */
+/* NEW: use core ellipsis */
 .item-primary {
     font-weight: 600;
     font-size: 1.05rem;
+    margin-bottom: 0.15rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-bottom: 0.15rem;
 }
 
 /* Platform + Status row */
+/* NEW: use core muted */
 .item-secondary-row {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     font-size: 0.85rem;
-    color: #666;
+    color: var(--vault-muted, #666);
     margin-bottom: 0.25rem;
 }
 
 .item-group {
     font-weight: 500;
-    color: #555;
+    color: var(--vault-muted, #666);
 }
 
 /* Release year (Ticker) */
+/* NEW: use core muted */
 .item-ticker {
     font-size: 0.85rem;
-    color: #555;
+    color: var(--vault-muted, #666);
     margin-bottom: 0.35rem;
     line-height: 1.2;
-    overflow: hidden;
+    overflow: hidden; /* ellipsis not needed here */
 }
 
 /* Developer + Publisher row */
+/* NEW: use core muted */
 .item-secondary {
     font-size: 0.8rem;
-    color: #666;
+    color: var(--vault-muted, #666);
     margin-bottom: 0.45rem;
     line-height: 1.2;
 }
 
-/* Description block (clamped) */
+/* Description block */
+/* NEW: use core muted-light */
 .item-footer {
     font-size: 0.85rem;
-    color: #666;
+    color: var(--vault-muted-light, #777);
     line-height: 1.25;
     display: -webkit-box;
     -webkit-line-clamp: 3;
@@ -176,7 +182,7 @@
 }
 
 /* ------------------------------------------------------------
-   Non-interactive cards (no retry URL)
+   Non-interactive cards
    ------------------------------------------------------------ */
 .compactlist-card:not(.has-error) {
     cursor: default;
@@ -223,7 +229,7 @@
     }
 
 /* ------------------------------------------------------------
-   Inline search form (Elements)
+   Inline search form
    ------------------------------------------------------------ */
 .inline-search-form {
     margin-top: 0.5rem;
@@ -256,16 +262,12 @@
 /* ------------------------------------------------------------
    Clickable overlay
    ------------------------------------------------------------ */
+/* NEW: use core .vault-overlay */
 .compactlist-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 5;
-    text-decoration: none;
-    color: inherit;
 }
 
 /* ------------------------------------------------------------
-   Thumbnail row
+   Thumbnail row (gallery)
    ------------------------------------------------------------ */
 .item-thumbnails {
     display: flex;
@@ -281,6 +283,7 @@
         display: none;
     }
 
+/* NEW: use core thumbnail size (48x48) */
 .thumbnail {
     width: 48px;
     height: 48px;

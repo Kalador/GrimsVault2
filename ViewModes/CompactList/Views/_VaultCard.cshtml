@@ -2,12 +2,14 @@
 
 <div class="compactlist-card @(Model.HasError ? "has-error" : "")">
 
-    <div class="compactlist-content">
+    <div class="compactlist-content vault-gap-tight vault-tight">
 
         @* Primary text *@
         @if (!string.IsNullOrWhiteSpace(Model.Primary))
         {
-            <div class="item-primary">@Model.Primary</div>
+            <div class="item-primary vault-ellipsis">
+                @Model.Primary
+            </div>
         }
 
         @* Secondary row *@
@@ -22,8 +24,8 @@
             }
         }
 
-        <div class="item-secondary-row">
-            <span class="item-group">@Model.Group</span>
+        <div class="item-secondary-row vault-muted">
+            <span class="item-group vault-muted">@Model.Group</span>
 
             @if (Model.HasError)
             {
@@ -46,7 +48,7 @@
                 @foreach (var url in urls)
                 {
                     <img src="@url"
-                         class="thumbnail"
+                         class="thumbnail vault-thumb"
                          loading="lazy"
                          onclick="openThumbnailLightbox(this)" />
                 }
@@ -56,19 +58,25 @@
         @* Ticker *@
         @if (!string.IsNullOrWhiteSpace(Model.Ticker))
         {
-            <div class="item-ticker">@Model.Ticker</div>
+            <div class="item-ticker vault-muted vault-ellipsis">
+                @Model.Ticker
+            </div>
         }
 
         @* Secondary text *@
         @if (!Model.HasError && !string.IsNullOrWhiteSpace(Model.Secondary))
         {
-            <div class="item-secondary">@Model.Secondary</div>
+            <div class="item-secondary vault-muted">
+                @Model.Secondary
+            </div>
         }
 
         @* Footer text *@
         @if (!string.IsNullOrWhiteSpace(Model.SecondFooter))
         {
-            <div class="item-footer">@Model.SecondFooter</div>
+            <div class="item-footer vault-muted-light">
+                @Model.SecondFooter
+            </div>
         }
 
         @* ELEMENTS BLOCK *@
@@ -88,7 +96,6 @@
                                    value="@el.Value"
                                    placeholder="@el.Placeholder"
                                    class="inline-search-input" />
-
                             break;
 
                         case Vault.Core.Internal.PageContentElementType.Checkbox:
@@ -108,13 +115,11 @@
                             </button>
                             break;
 
-
                         case Vault.Core.Internal.PageContentElementType.Hidden:
                             <input type="hidden"
                                    name="@el.Name"
                                    value="@el.Value" />
                             break;
-
                     }
                 }
             </form>
@@ -122,7 +127,7 @@
 
     </div>
 
-    @* CLICKABLE OVERLAY LOGIC *@
+    @* CLICKABLE OVERLAY *@
     @{
         string? retryUrl = null;
 
@@ -139,10 +144,10 @@
 
     @if (!string.IsNullOrWhiteSpace(retryUrl))
     {
-        <a href="@retryUrl" class="compactlist-overlay"></a>
+        <a href="@retryUrl" class="vault-overlay"></a>
     }
     else if (!string.IsNullOrWhiteSpace(cardUrl))
     {
-        <a href="@cardUrl" class="compactlist-overlay"></a>
+        <a href="@cardUrl" class="vault-overlay"></a>
     }
 </div>

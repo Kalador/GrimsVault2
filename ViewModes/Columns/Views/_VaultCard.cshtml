@@ -10,47 +10,51 @@
 
             <div class="column-card-inner">
 
-                <!-- Image -->
-                <div>
-                    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
-                    {
-                        <img src="@Model.ImageUrl"
-                             alt="@Model.Primary"
-                             style="height:80px; width:auto; border-radius:6px; display:block;" />
-                    }
-                    else
-                    {
-                        <div class="column-card-noimage">
-                            No Image
-                        </div>
-                    }
-                </div>
+                <!-- Thumbnail -->
+                @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                {
+                    <img src="@Model.ImageUrl"
+                         alt="@Model.Primary"
+                         loading="lazy"
+                         class="vault-thumb column-thumb" />
+                }
+                else
+                {
+                    <div class="column-card-noimage">
+                        No Image
+                    </div>
+                }
 
                 <!-- Content -->
                 <div class="column-card-content">
 
+                    <!-- Title -->
                     <div class="column-card-title">
                         <div class="ticker column-card-title-ticker">
-                            <div class="ticker-content">
+                            <div class="ticker-content vault-ellipsis">
                                 @Model.Secondary
                             </div>
                         </div>
                     </div>
 
-                    <div class="column-card-subtitle">
+                    <!-- Subtitle -->
+                    <div class="column-card-subtitle vault-ellipsis">
                         @Model.Primary
                     </div>
 
+                    <!-- Footer -->
                     <div class="column-card-footer">
+
                         <div class="ticker">
-                            <div class="ticker-content">
+                            <div class="ticker-content vault-muted vault-ellipsis">
                                 @Html.Raw(Model.Ticker)
                             </div>
                         </div>
 
-                        <div class="column-card-timestamp">
+                        <div class="column-card-timestamp vault-muted-light">
                             @Model.SecondFooter
                         </div>
+
                     </div>
 
                 </div>

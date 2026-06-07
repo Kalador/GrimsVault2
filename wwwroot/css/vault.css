@@ -112,6 +112,7 @@ a {
     text-decoration: none;
 }
 
+
 /* -------------------------------------------------- */
 /* LOADER                                              */
 /* -------------------------------------------------- */
@@ -143,6 +144,7 @@ a {
         opacity: 1;
     }
 }
+
 
 /* -------------------------------------------------- */
 /* TICKER (shared across all viewmodes)                */
@@ -203,7 +205,6 @@ a {
 
 .vault-header {
     text-align: center;
-    /*margin-bottom: 1rem;*/
 }
 
 .vault-title {
@@ -212,22 +213,20 @@ a {
     font-size: 1.5em;
     margin-block-start: 0.83em;
     margin-block-end: 0.83em;
-    margin-inline-start: 0px;
-    margin-inline-end: 0px;
     font-weight: bold;
     unicode-bidi: isolate;
 }
 
 .vault-pagebuttons {
-    display: inline-flex;
+    display: flex;
+    justify-content: center;
     gap: 0.5rem;
+    margin: 1rem 0;
 }
-
 
 .vault-pagebutton-form {
     margin: 0;
 }
-
 
 .vault-subtitle {
     font-size: 0.9rem;
@@ -236,8 +235,57 @@ a {
     margin-bottom: 0.75rem;
 }
 
-.vault-pagebuttons {
-    display: flex;
-    justify-content: center;
-    margin: 1rem 0;
+
+/* -------------------------------------------------- */
+/* NEW: SHARED UTILITIES (A–F)                         */
+/* -------------------------------------------------- */
+
+/* A) Ellipsis utility */
+.vault-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* B) Muted text (consistent across all viewmodes) */
+.vault-muted {
+    color: #666;
+}
+
+.vault-muted-light {
+    color: #777;
+}
+
+.vault-muted-xlight {
+    color: #888;
+}
+
+/* C) Default thumbnail (48x48) */
+.vault-thumb {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+/* D) Clickable overlay */
+.vault-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+/* E) Tight vertical rhythm */
+.vault-tight {
+    line-height: 1.2;
+}
+
+.vault-gap-tight {
+    gap: 0.25rem;
+}
+
+/* F) Divider-top utility */
+.vault-divider-top {
+    border-top: 1px solid #eee;
 }
