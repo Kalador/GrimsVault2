@@ -1,6 +1,5 @@
 ﻿// CollapsingLists ViewMode JS
-// Handles expand/collapse behaviour for grouped sections.
-// Purely layout logic — no feature/domain behaviour.
+// 1.0 behaviour, updated for 2.0 class names
 
 (function () {
     const groups = document.querySelectorAll('.collapsing-group');
@@ -18,9 +17,9 @@
         }
 
         header.addEventListener('click', () => {
-            const collapsed = body.classList.contains('collapsed');
+            const isCollapsed = body.classList.contains('collapsed');
 
-            if (collapsed) {
+            if (isCollapsed) {
                 body.classList.remove('collapsed');
                 header.classList.remove('collapsed');
             } else {
@@ -30,4 +29,3 @@
         });
     });
 })();
-Views

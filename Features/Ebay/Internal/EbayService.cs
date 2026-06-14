@@ -1,15 +1,9 @@
-﻿using Microsoft.Extensions.Configuration;
-using Vault.Core;
+﻿using Vault.Core;
 using Vault.Core.Internal;
 using Vault.ViewModes;
 
 namespace Vault.Features.Ebay;
 
-/// <summary>
-/// Provides eBay integration for Vault. 
-/// Fetches items flagged for eBay scanning, queries eBay for each,
-/// and shapes results into a PageContentModel for rendering.
-/// </summary>
 public sealed class EbayService(IConfiguration config, VaultService vault)
     : VaultFeatureBase, IVaultFeature
 {
@@ -27,10 +21,6 @@ public sealed class EbayService(IConfiguration config, VaultService vault)
     public string Status() => "eBay Feature OK";
 
     public VaultViewMode DefaultViewMode => CollapsingListsViewMode.Instance;
-
-    // ------------------------------------------------------------------------
-    // MAIN FEATURE ENTRY
-    // ------------------------------------------------------------------------
 
     public async Task<PageContentModel> LoadItemsAsync()
     {
@@ -75,45 +65,36 @@ public sealed class EbayService(IConfiguration config, VaultService vault)
 
             var ordered = included.Concat(excluded).ToList();
 
-            // Group-level action card
-            model.Items.Add(new PageContentItem
-            {
-                Group = game.Name ?? "Unknown Item",
-                Elements =
-                {
-                    new PageContentElement
-                    {
-                        Type = PageContentElementType.Button,
-                        Text = "Exclude Selected",
-                        ActionUrl = "/ebay/exclude",
-                        FormTarget = "_self"
-                    },
-                    new PageContentElement
-                    {
-                        Type = PageContentElementType.Hidden,
-                        Name = "gameId",
-                        Value = game.PageId
-                    }
-                },
-                FormMethod = "post",
-                FormAction = "/ebay/exclude"
-            });
+            var groupName = game.Name ?? "Unknown Item";
 
-            // Listing cards
+            model.GroupButtons[groupName] = new List<PageContentButton>
+            {
+                new PageContentButton
+                {
+                    Text = "Exclude Selected",
+                    ActionUrl = "/ebay/exclude"
+                },
+                new PageContentButton
+                {
+                    Text = "Show/Hide Excluded",
+                    ActionUrl = $"/ebay/toggle?gameId={game.PageId}"
+                }
+            };
+
             foreach (var listing in ordered)
             {
                 var isExcluded = listing.ItemId != null && excludedIds.Contains(listing.ItemId);
 
                 var card = new PageContentItem
                 {
-                    Group = game.Name ?? "Unknown Item",
-                    Primary = listing.Title,
-                    Secondary = FormatPrice(listing),
-                    Ticker = FormatEndTime(listing),
-                    SecondFooter = FormatFooter(listing),
-                    ImageUrl = listing.ImageUrl,
-                    Url = listing.ListingUrl,
-                    HasError = isExcluded,
+                    Group        = groupName,
+                    Primary      = listing.Title,
+                    Secondary    = FormatListingType(listing),
+                    Ticker       = FormatEndTime(listing),
+                    SecondFooter = FormatPrice(listing),
+                    ImageUrl     = listing.ImageUrl,
+                    Url          = listing.ListingUrl,
+                    HasError     = isExcluded,
                     Meta =
                     {
                         ["itemId"] = listing.ItemId ?? "",
@@ -123,21 +104,21 @@ public sealed class EbayService(IConfiguration config, VaultService vault)
                     {
                         new PageContentElement
                         {
-                            Type = PageContentElementType.Checkbox,
-                            Name = $"exclude_{listing.ItemId}",
-                            Label = "Exclude",
+                            Type    = PageContentElementType.Checkbox,
+                            Name    = $"exclude_{listing.ItemId}",
+                            Label   = "Exclude",
                             Checked = isExcluded
                         },
                         new PageContentElement
                         {
-                            Type = PageContentElementType.Hidden,
-                            Name = "itemId",
+                            Type  = PageContentElementType.Hidden,
+                            Name  = "itemId",
                             Value = listing.ItemId ?? ""
                         },
                         new PageContentElement
                         {
-                            Type = PageContentElementType.Hidden,
-                            Name = "gameId",
+                            Type  = PageContentElementType.Hidden,
+                            Name  = "gameId",
                             Value = game.PageId
                         }
                     },
@@ -151,10 +132,6 @@ public sealed class EbayService(IConfiguration config, VaultService vault)
 
         return model;
     }
-
-    // ------------------------------------------------------------------------
-    // MAPPING
-    // ------------------------------------------------------------------------
 
     private static EbayListing MapSummary(EbayApiModels.ItemSummary s)
     {
@@ -179,40 +156,36 @@ public sealed class EbayService(IConfiguration config, VaultService vault)
         };
     }
 
-    // ------------------------------------------------------------------------
-    // HELPERS
-    // ------------------------------------------------------------------------
+    private static string FormatListingType(EbayListing l)
+    {
+        return l.ListingType == "AUCTION"
+            ? "🔨 Auction"
+            : "🛒 Buy It Now";
+    }
 
     private static string FormatPrice(EbayListing l)
     {
-        var isAuction = l.ListingType == "AUCTION";
-
-        if (isAuction)
-            return $"{l.Price} {l.Currency} (Auction)";
-
-        return $"{l.Price} {l.Currency} Buy It Now";
+        var symbol = l.Currency == "GBP" ? "£" : l.Currency + " ";
+        return $"{symbol}{l.Price:0.00}";
     }
 
     private static string FormatEndTime(EbayListing l)
     {
-        var isAuction = l.ListingType == "AUCTION";
-
-        if (!isAuction || l.EndTime == null)
-            return "";
+        if (l.EndTime == null)
+            return "⏰ -";
 
         var remaining = l.EndTime.Value - DateTime.UtcNow;
 
+        if (remaining.TotalMinutes <= 0)
+            return "⏰ -";
+
         if (remaining.TotalHours < 1)
-            return $"Ends in {remaining.Minutes}m";
+            return $"⏰ {remaining.Minutes}m";
 
         if (remaining.TotalHours < 24)
-            return $"Ends in {remaining.Hours}h {remaining.Minutes}m";
+            return $"⏰ {remaining.Hours}h {remaining.Minutes}m";
 
-        return $"Ends {l.EndTime.Value:ddd HH:mm}";
+        return $"⏰ {l.EndTime.Value:ddd HH:mm}";
     }
 
-    private static string FormatFooter(EbayListing l)
-    {
-        return $"{l.Condition} — {l.SellerLocation}";
-    }
 }

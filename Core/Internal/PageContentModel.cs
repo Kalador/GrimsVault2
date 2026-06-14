@@ -11,6 +11,7 @@
 //          -> Meta (page-level metadata)
 //          -> Inputs (optional page-level input fields)
 //          -> PageButtons (global actions)
+//          -> GroupButtons (optional group-level actions)
 //          -> Items (cards)
 //              -> Elements (ordered UI controls inside the card)
 //              -> Group (string category assigned by the feature)
@@ -82,7 +83,9 @@ public class PageContentElement
     /// </summary>
     public string? ActionUrl { get; set; }
 
-    //PlaceHolder Text for text etc
+    /// <summary>
+    /// Optional placeholder text for inputs.
+    /// </summary>
     public string? Placeholder { get; set; }
 
     /// <summary>
@@ -90,8 +93,6 @@ public class PageContentElement
     /// Only applies to Button elements.
     /// </summary>
     public string? FormTarget { get; set; }
-
-
 }
 
 // ============================================================================
@@ -108,8 +109,6 @@ public class PageContentInput
     public string Label { get; set; } = "";
     public string? Value { get; set; }
     public string Type { get; set; } = "text";
-    
-
 }
 
 /// <summary>
@@ -130,6 +129,15 @@ public class PageContentModel
     public Dictionary<string, object> Meta { get; set; } = [];
     public List<PageContentInput> Inputs { get; set; } = [];
     public List<PageContentButton> PageButtons { get; set; } = [];
+
+    /// <summary>
+    /// Optional actions rendered at the *group* level.
+    /// Keys correspond to the Group string assigned by features.
+    /// ViewModes render these generically beneath each group.
+    /// </summary>
+    public Dictionary<string, List<PageContentButton>> GroupButtons { get; set; }
+        = new(StringComparer.OrdinalIgnoreCase);
+
     public List<PageContentItem> Items { get; set; } = [];
 }
 

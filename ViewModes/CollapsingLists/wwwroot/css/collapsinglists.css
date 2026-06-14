@@ -1,231 +1,195 @@
-﻿/* -------------------------------------------------- */
-/* ROOT CONTAINER                                      */
-/* -------------------------------------------------- */
-
-.collapsinglists {
-    padding: 0.25rem 0;
-    width: 100%;
-    max-width: 650px;
+﻿.vault-page {
+    padding-top: 2rem;
+    max-width: 60%;
     margin: 0 auto;
 }
 
-
-/* -------------------------------------------------- */
-/* GROUP WRAPPER + HEADER                              */
-/* -------------------------------------------------- */
-
 .collapsing-group {
-    margin-bottom: 0.75rem;
-    border-radius: 6px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 1rem;
     overflow: hidden;
 }
 
 .collapsing-header {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 0.6rem;
-    background: #e9ecef;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
     cursor: pointer;
-    user-select: none;
-    font-size: 0.95rem;
-    line-height: 1.2;
+    background: #fff;
+    border-bottom: none;
+    white-space: nowrap;
 }
 
-    .collapsing-header.collapsed .collapsing-toggle-icon {
-        transform: rotate(-90deg);
+    .collapsing-header:hover {
+        background: #f8f9fa;
     }
 
-.collapsing-toggle-icon {
-    transition: transform 0.15s ease;
-}
-
 .collapsing-title {
-    font-weight: 600;
-    flex: 1;
+    color: #333;
 }
 
-/* NEW: use core muted colour */
 .collapsing-count {
-    font-size: 0.75rem;
+    margin-left: auto;
+    font-size: 0.85rem;
     color: var(--vault-muted, #666);
 }
 
+/* Arrow rotation */
+.collapsing-toggle-icon {
+    transition: transform 0.2s ease;
+}
 
-/* -------------------------------------------------- */
-/* COLLAPSIBLE BODY                                    */
-/* -------------------------------------------------- */
+.collapsing-header.collapsed .collapsing-toggle-icon {
+    transform: rotate(-90deg);
+}
 
+/* ------------------------------------------------------------
+   Body (collapsible)
+   ------------------------------------------------------------ */
 .collapsing-body {
-    background: #fff;
-    border: 1px solid #ddd;
-    border-top: none;
+    padding: 0 1rem 1rem 1rem;
 }
 
     .collapsing-body.collapsed {
         display: none;
     }
 
-
-/* -------------------------------------------------- */
-/* CARD (ROW‑STYLE)                                    */
-/* -------------------------------------------------- */
-
-.collapsing-card {
-    position: relative;
-    padding: 0.55rem 0.6rem;
-    /* NEW: use core divider utility */
-    border-top: none;
-}
-
-    .collapsing-card + .collapsing-card {
-        /* NEW: apply divider between cards */
-        border-top: 1px solid #eee; /* or add class="vault-divider-top" in markup */
+    /* Divider between header and table */
+    .collapsing-body .divider {
+        margin: 0.75rem 0 1rem 0;
     }
 
-    .collapsing-card.has-error {
-        background: #fff4f4;
-        border-left: 3px solid #d9534f;
-    }
-
-
-/* -------------------------------------------------- */
-/* CARD INNER LAYOUT                                   */
-/* -------------------------------------------------- */
-
-.collapsing-card-inner {
-    display: flex;
-    gap: 0.55rem;
-    align-items: flex-start;
+/* ------------------------------------------------------------
+   Table (inherits pc-table structure)
+   ------------------------------------------------------------ */
+.pc-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 0.9rem;
 }
 
-
-/* -------------------------------------------------- */
-/* THUMBNAIL                                           */
-/* -------------------------------------------------- */
-
-/* NEW: remove old 64x64 block entirely */
-/* NEW: use core .vault-thumb (48x48) */
-
-.card-thumb {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-    .card-thumb img,
-    .thumb-img {
-        /* NEW: rely on .vault-thumb */
+    .pc-table td {
+        padding: 0.4rem 0.5rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #eee;
     }
 
-.thumb-placeholder {
+/* ------------------------------------------------------------
+   Columns
+   ------------------------------------------------------------ */
+.col-select {
+    width: 32px;
+    text-align: center;
+}
+
+.col-thumb {
+    width: 48px;
+}
+
+.col-main {
+    overflow: hidden;
+    vertical-align: middle;
+}
+
+.col-value {
+    width: 80px;
+    text-align: right;
+    padding-right: 0.75rem;
+    white-space: nowrap;
+}
+
+.col-actions {
+    width: 60px;
+    text-align: right;
+    padding-right: 0.75rem;
+    white-space: nowrap;
+}
+
+/* ------------------------------------------------------------
+   Thumbnail
+   ------------------------------------------------------------ */
+.col-thumb img.thumb {
     width: 48px;
     height: 48px;
-    background: #f0f0f0;
+    object-fit: cover;
     border-radius: 4px;
-    font-size: 0.7rem;
-    color: var(--vault-muted-light, #777);
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
-
-/* -------------------------------------------------- */
-/* MAIN CONTENT (DENSE + OLD‑STYLE)                    */
-/* -------------------------------------------------- */
-
-.card-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    /* NEW: use core tight rhythm */
-    gap: 0.2rem;
-    min-width: 0;
-}
-
-.item-primary {
-    font-weight: 600;
-    font-size: 1rem;
-    line-height: 1.2;
-    /* NEW: use core ellipsis */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.item-secondary {
-    font-size: 0.85rem;
-    color: var(--vault-muted, #666);
-    line-height: 1.2;
-}
-
-.item-ticker {
-    font-size: 0.8rem;
-    color: var(--vault-muted, #666);
-    /* NEW: use core ellipsis */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.item-footer {
-    font-size: 0.8rem;
-    color: var(--vault-muted-light, #777);
-    line-height: 1.25;
+/* ------------------------------------------------------------
+   Title + Meta
+   ------------------------------------------------------------ */
+.main-line {
+    font-weight: 500;
+    margin-bottom: 2px;
+    color: #222;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
 
-
-/* -------------------------------------------------- */
-/* ELEMENTS BLOCK                                      */
-/* -------------------------------------------------- */
-
-.collapsing-elements {
-    margin-top: 0.4rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
+/* 1.0-style meta line */
+.meta-line {
+    font-size: 0.85rem;
+    color: var(--vault-muted, #666);
+    margin-top: 2px;
+    display: block;
+    white-space: nowrap;
 }
 
-.collapsing-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
+.meta-secondary {
+    color: var(--vault-muted, #666);
 }
 
-.collapsing-button {
+.meta-tertiary {
+    opacity: 0.85;
+}
+
+/* ------------------------------------------------------------
+   Price (not bold)
+   ------------------------------------------------------------ */
+.value-display {
+    font-weight: normal;
+    color: #333;
+}
+
+/* ------------------------------------------------------------
+   Actions
+   ------------------------------------------------------------ */
+.col-actions .btn-small {
     padding: 0.25rem 0.5rem;
-    background: #007bff;
-    color: #fff;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
     font-size: 0.8rem;
 }
 
-    .collapsing-button:hover {
-        background: #0069d9;
-    }
-
-
-/* -------------------------------------------------- */
-/* CLICKABLE OVERLAY                                   */
-/* -------------------------------------------------- */
-
-/* NEW: remove local overlay, use core .vault-overlay */
-.collapsing-overlay {
+/* ------------------------------------------------------------
+   Excluded Rows
+   ------------------------------------------------------------ */
+.pc-row.is-excluded {
+    background: rgba(255, 0, 0, 0.15);
 }
 
+/* ------------------------------------------------------------
+   Mobile Behaviour (match 1.0)
+   ------------------------------------------------------------ */
+@media (max-width: 600px) {
+    .pc-table {
+        font-size: 0.8rem;
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
 
-/* -------------------------------------------------- */
-/* MUTED TEXT (REMOVE — now in core)                   */
-/* -------------------------------------------------- */
+        .pc-table td {
+            padding: 0.5rem 0.5rem;
+            white-space: nowrap;
+        }
 
-.text-muted,
-.muted {
-    /* NEW: no longer needed */
+    .col-main {
+        min-width: 200px;
+    }
 }
