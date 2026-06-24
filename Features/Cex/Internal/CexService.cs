@@ -48,15 +48,22 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
         var stores = await vault.GetStores(new QueryDefinition
         {
             Filters =
-            {
-                new QueryFilter
-                {
-                    Property = "Priority",
-                    Operator = QueryOperator.Equals,
-                    Value = true
-                }
-            }
+    {
+        new QueryFilter
+        {
+            Property = "Priority",
+            Operator = QueryOperator.Equals,
+            Value = true
+        },
+        new QueryFilter
+        {
+            Property = "StoreType",
+            Operator = QueryOperator.Equals,
+            Value = "Cex"
+        }
+    }
         });
+
 
         _priorityStores = stores;
         _storesLoaded = true;

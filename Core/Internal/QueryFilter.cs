@@ -76,6 +76,7 @@
         GreaterThan,
         LessThan,
         NotEmpty,
-        Empty
+        Empty,
+        SelectEquals
     }
 }

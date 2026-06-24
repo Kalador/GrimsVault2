@@ -29,3 +29,24 @@
         });
     });
 })();
+
+// ---------------------------------------------------------------------------
+// Generic: Show/Hide all error rows inside a given group
+// ---------------------------------------------------------------------------
+
+function toggleErrorRows(groupName) {
+    // Find the group section by matching the visible group title text
+    const group = [...document.querySelectorAll('.collapsing-group')]
+        .find(g => g.querySelector('.collapsing-title')?.textContent.trim() === groupName);
+
+    if (!group) {
+        return;
+    }
+
+    // Error rows are marked with .is-excluded (from HasError = true)
+    const rows = group.querySelectorAll('.pc-row.is-excluded');
+
+    rows.forEach(row => {
+        row.classList.toggle('hidden');
+    });
+}

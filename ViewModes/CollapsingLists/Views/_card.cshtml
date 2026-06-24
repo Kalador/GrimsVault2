@@ -1,7 +1,7 @@
 ﻿@model Vault.Core.Internal.PageContentItem
 @using Vault.Core.Internal
 
-<tr class="pc-row @(Model.HasError ? "is-excluded" : "")">
+<tr class="pc-row @(Model.HasError ? "is-excluded hidden" : "")">
 
     <!-- Checkbox column -->
     <td class="col-select">
@@ -48,6 +48,8 @@
 
     <!-- Actions -->
     <td class="col-actions">
+
+        <!-- Primary card link -->
         @if (!string.IsNullOrWhiteSpace(Model.Url))
         {
             <a class="btn secondary btn-small"
@@ -55,10 +57,38 @@
                target="_blank">View</a>
         }
 
+        <!-- Hidden fields -->
         @foreach (var el in Model.Elements.Where(e => e.Type == PageContentElementType.Hidden))
         {
             <input type="hidden" name="@el.Name" value="@el.Value" />
         }
+
+        <!-- Button elements -->
+        @foreach (var el in Model.Elements.Where(e => e.Type == PageContentElementType.Button))
+        {
+            if (!string.IsNullOrWhiteSpace(el.ActionUrl) &&
+                el.ActionUrl.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase))
+            {
+                <!-- JavaScript button -->
+                <button class="btn secondary btn-small"
+                        onclick="@el.ActionUrl.Substring("javascript:".Length)">
+                    @el.Text
+                </button>
+            }
+            else if (!string.IsNullOrWhiteSpace(el.ActionUrl))
+            {
+                <!-- Normal POST/GET button -->
+                <form method="post" action="@el.ActionUrl">
+                    <button class="btn secondary btn-small">@el.Text</button>
+                </form>
+            }
+            else
+            {
+                <!-- Button with no action -->
+                <button class="btn secondary btn-small">@el.Text</button>
+            }
+        }
+
     </td>
 
 </tr>

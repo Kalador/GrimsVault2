@@ -27,9 +27,19 @@
             <div class="vault-pagebuttons">
                 @foreach (var btn in Model.PageButtons)
                 {
-                    <form method="post" action="@btn.ActionUrl" class="vault-pagebutton-form">
-                        <button class="btn">@btn.Text</button>
-                    </form>
+                    if (btn.ActionUrl.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <button class="btn"
+                                onclick="@btn.ActionUrl.Substring("javascript:".Length)">
+                            @btn.Text
+                        </button>
+                    }
+                    else
+                    {
+                        <form method="post" action="@btn.ActionUrl" class="vault-pagebutton-form">
+                            <button class="btn">@btn.Text</button>
+                        </form>
+                    }
                 }
             </div>
         }
@@ -93,9 +103,19 @@
                         <div class="collapsing-group-actions">
                             @foreach (var btn in groupButtons)
                             {
-                                <form method="post" action="@btn.ActionUrl">
-                                    <button class="btn">@btn.Text</button>
-                                </form>
+                                if (btn.ActionUrl.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <button class="btn"
+                                            onclick="@btn.ActionUrl.Substring("javascript:".Length)">
+                                        @btn.Text
+                                    </button>
+                                }
+                                else
+                                {
+                                    <form method="post" action="@btn.ActionUrl">
+                                        <button class="btn">@btn.Text</button>
+                                    </form>
+                                }
                             }
                         </div>
                     }

@@ -77,7 +77,7 @@ public sealed class EbayService(IConfiguration config, VaultService vault)
                 new PageContentButton
                 {
                     Text = "Show/Hide Excluded",
-                    ActionUrl = $"/ebay/toggle?gameId={game.PageId}"
+                    ActionUrl = $"javascript:toggleErrorRows('{groupName}')"
                 }
             };
 
@@ -87,41 +87,32 @@ public sealed class EbayService(IConfiguration config, VaultService vault)
 
                 var card = new PageContentItem
                 {
-                    Group        = groupName,
-                    Primary      = listing.Title,
-                    Secondary    = FormatListingType(listing),
-                    Ticker       = FormatEndTime(listing),
+                    Group = groupName,
+                    Primary = listing.Title,
+                    Secondary = FormatListingType(listing),
+                    Ticker = FormatEndTime(listing),
                     SecondFooter = FormatPrice(listing),
-                    ImageUrl     = listing.ImageUrl,
-                    Url          = listing.ListingUrl,
-                    HasError     = isExcluded,
+                    ImageUrl = listing.ImageUrl,
+                    Url = listing.ListingUrl,
+                    HasError = isExcluded,
                     Meta =
                     {
                         ["itemId"] = listing.ItemId ?? "",
                         ["gameId"] = game.PageId
                     },
-                    Elements =
-                    {
-                        new PageContentElement
-                        {
-                            Type    = PageContentElementType.Checkbox,
-                            Name    = $"exclude_{listing.ItemId}",
-                            Label   = "Exclude",
-                            Checked = isExcluded
-                        },
-                        new PageContentElement
-                        {
-                            Type  = PageContentElementType.Hidden,
-                            Name  = "itemId",
-                            Value = listing.ItemId ?? ""
-                        },
-                        new PageContentElement
-                        {
-                            Type  = PageContentElementType.Hidden,
-                            Name  = "gameId",
-                            Value = game.PageId
-                        }
-                    },
+                    Elements = isExcluded
+        ?
+          // Or your specific collection type
+          [
+              new PageContentElement { Type = PageContentElementType.Hidden, Name = "itemId", Value = listing.ItemId ?? "" },
+              new PageContentElement { Type = PageContentElementType.Hidden, Name = "gameId", Value = game.PageId }
+          ]
+        :
+          [
+              new PageContentElement { Type = PageContentElementType.Checkbox, Name = $"exclude_{listing.ItemId}", Label = "Exclude", Checked = false },
+              new PageContentElement { Type = PageContentElementType.Hidden, Name = "itemId", Value = listing.ItemId ?? "" },
+              new PageContentElement { Type = PageContentElementType.Hidden, Name = "gameId", Value = game.PageId }
+          ],
                     FormMethod = "post",
                     FormAction = "/ebay/exclude"
                 };

@@ -173,6 +173,38 @@
     background: rgba(255, 0, 0, 0.15);
 }
 
+/* Generic hide class used by JS toggles */
+.hidden {
+    display: none !important;
+}
+
+/* ------------------------------------------------------------
+   Group Footer Buttons (match View button)
+   ------------------------------------------------------------ */
+.collapsing-group-actions {
+    text-align: right;
+    padding-top: 0.5rem;
+}
+
+    .collapsing-group-actions form {
+        display: inline-block;
+        margin-right: 0.5rem;
+    }
+
+    .collapsing-group-actions button {
+        padding: 0.25rem 0.5rem; /* same as .btn-small */
+        font-size: 0.8rem; /* same as .btn-small */
+        background: #e9ecef; /* same tone as .secondary */
+        color: #333;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .collapsing-group-actions button:hover {
+            background: #dfe3e6;
+        }
+
 /* ------------------------------------------------------------
    Mobile Behaviour (match 1.0)
    ------------------------------------------------------------ */

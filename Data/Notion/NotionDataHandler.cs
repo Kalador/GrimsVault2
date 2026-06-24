@@ -37,6 +37,7 @@ namespace Vault.Data.Notion
             if (_propertyTypes != null)
                 return;
 
+            // Load primary DB schema
             var db = await _client.GetAsync($"/databases/{_databaseId}");
 
             _propertyTypes = db.RootElement
@@ -46,6 +47,22 @@ namespace Vault.Data.Notion
                     p => p.Name,
                     p => p.Value.GetProperty("type").GetString()!
                 );
+
+            // Load secondary DB schema
+            db = await _client.GetAsync($"/databases/{_storeDatabaseId}");
+
+            foreach (var prop in db.RootElement.GetProperty("properties").EnumerateObject())
+            {
+                var name = prop.Name;
+                var type = prop.Value.GetProperty("type").GetString()!;
+
+                // Silent ignore on duplicates
+                if (!_propertyTypes.ContainsKey(name))
+                    _propertyTypes[name] = type;
+            }
+
+
+
         }
 
         // =====================================================================
