@@ -32,12 +32,33 @@ namespace Vault.Data.Notion
             _http.DefaultRequestHeaders.Add("Notion-Version", _version);
         }
 
+        public async Task<JsonDocument> PostInsertAsync(string url, object payload)
+        {
+            ApplyHeaders();
+
+            // Serialize EXACTLY the payload you built
+            var json = JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _http.PostAsync(_baseUrl + url, content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Notion INSERT failed ({response.StatusCode}): {errorBody}");
+            }
+
+            var body = await response.Content.ReadAsStringAsync();
+            return JsonDocument.Parse(body);
+        }
+
+
         /// <summary>
-        /// Sends a POST request to a Notion endpoint with a JSON payload.
+        /// Sends a POST query request to a Notion endpoint with a JSON payload.
         /// Supports optional page size.
         /// Returns the raw JSON document.
         /// </summary>
-        public async Task<JsonDocument> PostAsync(string url, object payload, int? pageSize = null)
+        public async Task<JsonDocument> PostQueryAsync(string url, object payload, int? pageSize = null)
         {
             ApplyHeaders();
 

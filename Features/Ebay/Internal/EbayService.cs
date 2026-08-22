@@ -98,6 +98,11 @@ public sealed class EbayService(IConfiguration config, VaultService vault)
         return cards.GroupBy(c => c.Group).First();
     }
 
+    public async Task AddListingExclusionsAsync(string itemId, IEnumerable<string> listingIds)
+    {
+        // eBay always uses listingType = "eBay"
+        await _vault.AddListingExclusionsAsync(itemId, listingIds, "eBay");
+    }
 
     public async Task<PageContentModel> LoadItemsAsync()
     {

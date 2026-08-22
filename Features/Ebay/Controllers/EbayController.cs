@@ -52,6 +52,8 @@
         [HttpPost("exclude")]
         public async Task<IActionResult> Exclude([FromForm] EbayExclusionRequest request)
         {
+            await service.AddListingExclusionsAsync(request.ItemId, request.ListingId);
+
             var group = await service.LoadSingleItemAsync(request.ItemId);
 
             var partialPath = service.DefaultViewMode.CardPartialPath;

@@ -81,7 +81,7 @@ namespace Vault.Data.Notion
                 ? new { }
                 : BuildNotionPayload(query);
 
-            var json = await _client.PostAsync(endpoint, payload, pageSize);
+            var json = await _client.PostQueryAsync(endpoint, payload, pageSize);
 
             return
             [
@@ -118,7 +118,7 @@ namespace Vault.Data.Notion
                 ? new { }
                 : BuildNotionPayload(query);
 
-            var json = await _client.PostAsync(endpoint, payload, pageSize);
+            var json = await _client.PostQueryAsync(endpoint, payload, pageSize);
 
             return
             [
@@ -184,8 +184,12 @@ namespace Vault.Data.Notion
                         {
                             rich_text = new[]
                             {
-                                new { text = new { content = id } }
-                            }
+                        new
+                        {
+                            type = "text",
+                            text = new { content = id }
+                        }
+                    }
                         },
                         ["Listing Type"] = new
                         {
@@ -195,15 +199,17 @@ namespace Vault.Data.Notion
                         {
                             relation = new[]
                             {
-                                new { id = pageID }
-                            }
+                        new { id = pageID }
+                    }
                         }
                     }
                 };
 
-                await _client.PostAsync("/pages", payload);
+                await _client.PostInsertAsync("/pages", payload);
             }
         }
+
+
 
         // =====================================================================
         //  PAYLOAD BUILDER (QUERY)

@@ -103,7 +103,7 @@ public class VaultService
     /// <param name="pageID">The GUID / Key of the VaultItem to update.</param>
     /// <param name="listingIds">A collection of listing IDs to exclude.</param>
     /// <param name="listingType">Marketplace type for the exclusions (e.g. "eBay").</param>
-    public async Task AddListingExclusions(string pageID, IEnumerable<string> listingIds, string listingType)
+    public async Task AddListingExclusionsAsync(string pageID, IEnumerable<string> listingIds, string listingType)
     {
         await _data.AddListingExclusionsAsync(pageID, listingIds, listingType);
     }
