@@ -67,7 +67,6 @@ public class VaultService
     public async Task<VaultItem?> GetItem(string id)
     {
         return await _data.GetItemAsync(id);
-    
     }
 
     /// <summary>
@@ -75,7 +74,7 @@ public class VaultService
     /// </summary>
     public async Task UpdateItem(VaultItem item)
     {
-        await _data.    UpdateItemAsync(item);
+        await _data.UpdateItemAsync(item);
     }
 
     /// <summary>
@@ -85,7 +84,6 @@ public class VaultService
     {
         await _data.UpdateItemsAsync(items);
     }
-
 
     /// <summary>
     /// Retrieves VaultStores from the data handler.
@@ -98,4 +96,15 @@ public class VaultService
         return await _data.GetStoresAsync(query, pageSize);
     }
 
+    /// <summary>
+    /// Adds one or more listing exclusions for a given VaultItem.
+    /// Delegates to the underlying data handler.
+    /// </summary>
+    /// <param name="pageID">The GUID / Key of the VaultItem to update.</param>
+    /// <param name="listingIds">A collection of listing IDs to exclude.</param>
+    /// <param name="listingType">Marketplace type for the exclusions (e.g. "eBay").</param>
+    public async Task AddListingExclusions(string pageID, IEnumerable<string> listingIds, string listingType)
+    {
+        await _data.AddListingExclusionsAsync(pageID, listingIds, listingType);
+    }
 }

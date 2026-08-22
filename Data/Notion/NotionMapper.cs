@@ -62,7 +62,8 @@ namespace Vault.Data.Notion
                 SortOrder = NotionParser.ExtractRichText(props, "Sort Order"),
                 CexID = NotionParser.ExtractRichText(props, "CEX Product Code"),
                 SearchEbay = NotionParser.ExtractCheckbox(props, "Search eBay"),
-                ExcludedEbayIds = NotionParser.ExtractRollupRichTextArray(props, "Excluded eBay IDs")
+                ExcludedListingIds = NotionParser.ExtractRollupRichTextArray(props, "Excluded Listing IDs")
+
             };
         }
 

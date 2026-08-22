@@ -1,7 +1,8 @@
 ﻿@model Vault.Core.Internal.PageContentModel
-@using Vault.Core.Internal
 
 @{
+    ViewData["PageContentModel"] = Model;
+
     var grouped = Model.Items
         .GroupBy(i => i.Group ?? "")
         .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
@@ -71,58 +72,7 @@
 
         @foreach (var group in grouped)
         {
-            var groupName = group.Key;
-            var items = group.ToList();
-
-            <section class="collapsing-group">
-
-                <!-- Group Header (clickable) -->
-                <header class="collapsing-header vault-tight">
-                    <span class="collapsing-toggle-icon">▼</span>
-                    <span class="collapsing-title">@groupName</span>
-                    <span class="collapsing-count">(@items.Count)</span>
-                </header>
-
-                <!-- Group Body -->
-                <div class="collapsing-body expanded">
-
-                    <div class="divider"></div>
-
-                    <table class="pc-table">
-                        <tbody>
-                            @foreach (var item in items)
-                            {
-                                @await Html.PartialAsync("/ViewModes/CollapsingLists/Views/_Card.cshtml", item)
-                            }
-                        </tbody>
-                    </table>
-
-                    @if (Model.GroupButtons?.TryGetValue(groupName, out var groupButtons) == true &&
-                         groupButtons.Any())
-                    {
-                        <div class="collapsing-group-actions">
-                            @foreach (var btn in groupButtons)
-                            {
-                                if (btn.ActionUrl.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    <button class="btn"
-                                            onclick="@btn.ActionUrl.Substring("javascript:".Length)">
-                                        @btn.Text
-                                    </button>
-                                }
-                                else
-                                {
-                                    <form method="post" action="@btn.ActionUrl">
-                                        <button class="btn">@btn.Text</button>
-                                    </form>
-                                }
-                            }
-                        </div>
-                    }
-
-                </div>
-
-            </section>
+            @await Html.PartialAsync("/ViewModes/CollapsingLists/Views/_Group.cshtml", group)
         }
 
     </div>

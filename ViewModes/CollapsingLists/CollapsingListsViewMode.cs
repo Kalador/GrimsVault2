@@ -1,5 +1,6 @@
 ﻿using Vault.Core;
 
+
 namespace Vault.ViewModes;
 
 /// <summary>
@@ -46,4 +47,7 @@ public sealed class CollapsingListsViewMode : VaultViewMode
     /// </summary>
     public override IReadOnlyList<string> Scripts =>
         [$"/ViewModes/CollapsingLists/js/collapsinglists.js?v={CacheBust}"];
+
+    
+
 }

@@ -53,7 +53,7 @@ public sealed class EbayService(IConfiguration config, VaultService vault)
                 .Select(MapSummary)
                 .ToList();
 
-            var excludedIds = game.ExcludedEbayIds ?? new List<string>();
+            var excludedIds = game.ExcludedListingIds ?? new List<string>();
 
             var included = listings
                 .Where(l => l.ItemId != null && !excludedIds.Contains(l.ItemId))
@@ -95,24 +95,20 @@ public sealed class EbayService(IConfiguration config, VaultService vault)
                     ImageUrl = listing.ImageUrl,
                     Url = listing.ListingUrl,
                     HasError = isExcluded,
+
                     Meta =
                     {
-                        ["itemId"] = listing.ItemId ?? "",
-                        ["gameId"] = game.PageId
+                        ["listingId"] = listing.ItemId ?? "",
+                        ["itemId"] = game.PageId   // VaultItemId
                     },
+
                     Elements = isExcluded
-        ?
-          // Or your specific collection type
-          [
-              new PageContentElement { Type = PageContentElementType.Hidden, Name = "itemId", Value = listing.ItemId ?? "" },
-              new PageContentElement { Type = PageContentElementType.Hidden, Name = "gameId", Value = game.PageId }
-          ]
-        :
-          [
-              new PageContentElement { Type = PageContentElementType.Checkbox, Name = $"exclude_{listing.ItemId}", Label = "Exclude", Checked = false },
-              new PageContentElement { Type = PageContentElementType.Hidden, Name = "itemId", Value = listing.ItemId ?? "" },
-              new PageContentElement { Type = PageContentElementType.Hidden, Name = "gameId", Value = game.PageId }
-          ],
+                    ? []
+                    : [
+                        new PageContentElement { Type = PageContentElementType.Checkbox, Name = "ListingId", Value = listing.ItemId ?? "" }
+                      ],
+
+
                     FormMethod = "post",
                     FormAction = "/ebay/exclude"
                 };
@@ -178,5 +174,4 @@ public sealed class EbayService(IConfiguration config, VaultService vault)
 
         return $"⏰ {l.EndTime.Value:ddd HH:mm}";
     }
-
 }

@@ -225,3 +225,9 @@
         min-width: 200px;
     }
 }
+
+.exclude-form {
+    width: 100%;
+    max-width: inherit;
+    display: block;
+}

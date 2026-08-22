@@ -1,4 +1,6 @@
-﻿namespace Vault.Features.Ebay;
+﻿using Vault.Core.Internal;
+
+namespace Vault.Features.Ebay;
 
 /// <summary>
 /// Represents a single eBay listing returned from a search or detail lookup.
@@ -47,18 +49,19 @@ public sealed class EbayListing
 }
 
 /// <summary>
-/// Represents a request to exclude one or more eBay listings
-/// from appearing in search results for a specific item.
+/// Represents a single eBay listing exclusion request.
+/// This is used only for POST binding in the eBay feature.
 /// </summary>
 public sealed class EbayExclusionRequest
 {
     /// <summary>
-    /// Identifier of the item in Vault for which exclusions apply.
+    /// The Vault item (Notion page) being updated.
     /// </summary>
     public string ItemId { get; set; } = "";
 
     /// <summary>
-    /// List of eBay item IDs to exclude.
+    /// The list of eBay listing IDs selected for exclusion.
     /// </summary>
-    public List<string> EbayIds { get; set; } = new();
+    public List<string> ListingId { get; set; } = [];
 }
+

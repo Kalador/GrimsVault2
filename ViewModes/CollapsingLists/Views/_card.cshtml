@@ -1,94 +1,90 @@
 ﻿@model Vault.Core.Internal.PageContentItem
 @using Vault.Core.Internal
 
-<tr class="pc-row @(Model.HasError ? "is-excluded hidden" : "")">
-
-    <!-- Checkbox column -->
-    <td class="col-select">
-        @foreach (var el in Model.Elements.Where(e => e.Type == PageContentElementType.Checkbox))
+<!-- Checkbox column -->
+<td class="col-select">
+    @if (!Model.HasError)
+    {
+        foreach (var el in Model.Elements.Where(e => e.Type == PageContentElementType.Checkbox))
         {
             <input type="checkbox"
                    name="@el.Name"
-            @(el.Checked ? "checked" : "") />
+                   value="@el.Value" />
         }
-    </td>
+    }
+</td>
 
-    <!-- Thumbnail -->
-    <td class="col-thumb">
-        @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+<!-- Thumbnail -->
+<td class="col-thumb">
+    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+    {
+        <img src="@Model.ImageUrl" class="thumb vault-thumb" />
+    }
+</td>
+
+<!-- Main text + meta -->
+<td class="col-main">
+    <div class="main-line">@Html.Raw(Model.Primary)</div>
+
+    <div class="meta-line">
+        @if (!string.IsNullOrWhiteSpace(Model.Secondary))
         {
-            <img src="@Model.ImageUrl" class="thumb vault-thumb" />
-        }
-    </td>
-
-    <!-- Main text + meta -->
-    <td class="col-main">
-        <div class="main-line">@Html.Raw(Model.Primary)</div>
-
-        <div class="meta-line">
-            @if (!string.IsNullOrWhiteSpace(Model.Secondary))
-            {
-                <span class="meta-secondary">@Html.Raw(Model.Secondary)</span>
-            }
-
-            @if (!string.IsNullOrWhiteSpace(Model.Ticker))
-            {
-                <span class="meta-tertiary">@Html.Raw(Model.Ticker)</span>
-            }
-        </div>
-    </td>
-
-    <!-- Value column -->
-    <td class="col-value">
-        @if (!string.IsNullOrWhiteSpace(Model.SecondFooter))
-        {
-            <span class="value-display">@Html.Raw(Model.SecondFooter)</span>
-        }
-    </td>
-
-    <!-- Actions -->
-    <td class="col-actions">
-
-        <!-- Primary card link -->
-        @if (!string.IsNullOrWhiteSpace(Model.Url))
-        {
-            <a class="btn secondary btn-small"
-               href="@Model.Url"
-               target="_blank">View</a>
+            <span class="meta-secondary">@Html.Raw(Model.Secondary)</span>
         }
 
-        <!-- Hidden fields -->
-        @foreach (var el in Model.Elements.Where(e => e.Type == PageContentElementType.Hidden))
+        @if (!string.IsNullOrWhiteSpace(Model.Ticker))
         {
-            <input type="hidden" name="@el.Name" value="@el.Value" />
+            <span class="meta-tertiary">@Html.Raw(Model.Ticker)</span>
         }
+    </div>
+</td>
 
-        <!-- Button elements -->
-        @foreach (var el in Model.Elements.Where(e => e.Type == PageContentElementType.Button))
+<!-- Value column -->
+<td class="col-value">
+    @if (!string.IsNullOrWhiteSpace(Model.SecondFooter))
+    {
+        <span class="value-display">@Html.Raw(Model.SecondFooter)</span>
+    }
+</td>
+
+<!-- Actions -->
+<td class="col-actions">
+
+    <!-- Primary card link -->
+    @if (!string.IsNullOrWhiteSpace(Model.Url))
+    {
+        <a class="btn secondary btn-small"
+           href="@Model.Url"
+           target="_blank">View</a>
+    }
+
+    <!-- Hidden fields (ONLY those defined in Elements) -->
+    @foreach (var el in Model.Elements.Where(e => e.Type == PageContentElementType.Hidden))
+    {
+        <input type="hidden" name="@el.Name" value="@el.Value" />
+    }
+
+    <!-- Button elements -->
+    @foreach (var el in Model.Elements.Where(e => e.Type == PageContentElementType.Button))
+    {
+        if (!string.IsNullOrWhiteSpace(el.ActionUrl) &&
+            el.ActionUrl.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase))
         {
-            if (!string.IsNullOrWhiteSpace(el.ActionUrl) &&
-                el.ActionUrl.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase))
-            {
-                <!-- JavaScript button -->
-                <button class="btn secondary btn-small"
-                        onclick="@el.ActionUrl.Substring("javascript:".Length)">
-                    @el.Text
-                </button>
-            }
-            else if (!string.IsNullOrWhiteSpace(el.ActionUrl))
-            {
-                <!-- Normal POST/GET button -->
-                <form method="post" action="@el.ActionUrl">
-                    <button class="btn secondary btn-small">@el.Text</button>
-                </form>
-            }
-            else
-            {
-                <!-- Button with no action -->
+            <button class="btn secondary btn-small"
+                    onclick="@el.ActionUrl.Substring("javascript:".Length)">
+                @el.Text
+            </button>
+        }
+        else if (!string.IsNullOrWhiteSpace(el.ActionUrl))
+        {
+            <form method="post" action="@el.ActionUrl">
                 <button class="btn secondary btn-small">@el.Text</button>
-            }
+            </form>
         }
+        else
+        {
+            <button class="btn secondary btn-small">@el.Text</button>
+        }
+    }
 
-    </td>
-
-</tr>
+</td>

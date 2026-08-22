@@ -1,5 +1,7 @@
-﻿using System.Diagnostics;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 using System.Reflection;
+using Vault.Core.Internal;
 
 namespace Vault.Core
 {
@@ -58,6 +60,8 @@ namespace Vault.Core
                 CacheBust = info.FileVersion ?? DateTime.UtcNow.Ticks.ToString();
             }
         }
+
+
     }
 
     public static class VaultViewModes
@@ -76,6 +80,8 @@ namespace Vault.Core
             return mode;
         }
     }
+
+
 
     
 

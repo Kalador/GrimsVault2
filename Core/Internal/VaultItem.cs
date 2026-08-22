@@ -92,6 +92,8 @@ public class VaultItem
     public bool SearchEbay { get; set; }
 
     //List of eBay item IDs to exclude from results for this game. Populated from a multi-select property in Notion, stored as comma-separated values. Used to filter out irrelevant or duplicate listings.
-    public List<string>? ExcludedEbayIds { get; set; }
+    public List<string>? ExcludedListingIds { get; set; }
+
+ 
 
 }

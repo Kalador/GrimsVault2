@@ -12,6 +12,7 @@ namespace Vault.Data.Notion
     /// - Apply optional ORDER BY clauses when provided
     /// - Map raw Notion JSON pages into strongly-typed Core models
     /// - Update VaultItem records via PATCH operations
+    /// - Create exclusion entries and update relation fields
     /// 
     /// This class performs no business logic and stores no state beyond configuration.
     /// </summary>
@@ -24,6 +25,9 @@ namespace Vault.Data.Notion
 
         // Stores database
         private readonly string _storeDatabaseId = config["Notion:NotionStoreDatabaseId"]!;
+
+        // Exclusions database
+        private readonly string _exclusionDatabaseId = config["Notion:NotionExclusionDatabaseId"]!;
 
         // Cached property types for the main database
         private Dictionary<string, string>? _propertyTypes;
@@ -56,13 +60,9 @@ namespace Vault.Data.Notion
                 var name = prop.Name;
                 var type = prop.Value.GetProperty("type").GetString()!;
 
-                // Silent ignore on duplicates
                 if (!_propertyTypes.ContainsKey(name))
                     _propertyTypes[name] = type;
             }
-
-
-
         }
 
         // =====================================================================
@@ -94,20 +94,13 @@ namespace Vault.Data.Notion
 
         public async Task<VaultItem?> GetItemAsync(string pageId)
         {
-            // Use the existing NotionClient, not a raw HttpClient
             var json = await _client.GetAsync($"/pages/{pageId}");
 
-            // If Notion returned nothing or malformed JSON, bail out
             if (json is null || !json.RootElement.TryGetProperty("properties", out _))
                 return null;
 
-            // Your mapper already handles single-page objects perfectly
             return NotionMapper.MapVaultItem(json.RootElement);
         }
-
-
-
-
 
         // =====================================================================
         //  STORES (READ)
@@ -140,10 +133,6 @@ namespace Vault.Data.Notion
         //  ITEMS (WRITE)
         // =====================================================================
 
-        /// <summary>
-        /// Updates a single VaultItem in Notion using a PATCH request.
-        /// Only fields present in the outbound payload are modified.
-        /// </summary>
         public async Task UpdateItemAsync(VaultItem item)
         {
             await EnsureSchemaLoadedAsync();
@@ -154,13 +143,9 @@ namespace Vault.Data.Notion
             await _client.PatchAsync(endpoint, payload);
         }
 
-        /// <summary>
-        /// Updates multiple VaultItems in Notion.
-        /// Calls UpdateItemAsync for each item with controlled concurrency.
-        /// </summary>
         public async Task UpdateItemsAsync(IEnumerable<VaultItem> items)
         {
-            var semaphore = new SemaphoreSlim(4); // safe concurrency for Notion
+            var semaphore = new SemaphoreSlim(4);
 
             var tasks = items.Select(async item =>
             {
@@ -176,6 +161,48 @@ namespace Vault.Data.Notion
             });
 
             await Task.WhenAll(tasks);
+        }
+
+        // =====================================================================
+        //  EXCLUSIONS (WRITE)
+        // =====================================================================
+
+        /// <summary>
+        /// Adds one or more listing exclusions for a given VaultItem.
+        /// Creates exclusion pages and updates the item's relation field.
+        /// </summary>
+        public async Task AddListingExclusionsAsync(string pageID, IEnumerable<string> listingIds, string listingType)
+        {
+            foreach (var id in listingIds)
+            {
+                var payload = new
+                {
+                    parent = new { database_id = _exclusionDatabaseId },
+                    properties = new Dictionary<string, object>
+                    {
+                        ["Listing ID"] = new
+                        {
+                            rich_text = new[]
+                            {
+                                new { text = new { content = id } }
+                            }
+                        },
+                        ["Listing Type"] = new
+                        {
+                            select = new { name = listingType }
+                        },
+                        ["Item"] = new
+                        {
+                            relation = new[]
+                            {
+                                new { id = pageID }
+                            }
+                        }
+                    }
+                };
+
+                await _client.PostAsync("/pages", payload);
+            }
         }
 
         // =====================================================================
@@ -210,7 +237,7 @@ namespace Vault.Data.Notion
         }
 
         // =====================================================================
-        //  FILTER BUILDER (SMART TYPE DETECTION)
+        //  FILTER BUILDER
         // =====================================================================
 
         private object BuildNotionFilter(QueryFilter f)
