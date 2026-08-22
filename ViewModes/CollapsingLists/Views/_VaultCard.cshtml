@@ -1,0 +1,159 @@
+﻿@model IGrouping<string, Vault.Core.Internal.PageContentItem>
+@using Vault.Core.Internal
+
+@{
+    var groupName = Model.Key;
+    var items = Model.ToList();
+    var parentModel = ViewData["PageContentModel"] as PageContentModel;
+}
+
+<section class="collapsing-group">
+
+    <!-- Group Header (clickable) -->
+    <header class="collapsing-header vault-tight">
+        <span class="collapsing-toggle-icon">▼</span>
+        <span class="collapsing-title">@groupName</span>
+        <span class="collapsing-count">(@items.Count)</span>
+    </header>
+
+    <!-- Group Body -->
+    <div class="collapsing-body expanded">
+
+        <div class="divider"></div>
+
+        <!-- Exclusion form -->
+        <form method="post" class="exclude-form">
+
+            <!-- Hidden fields -->
+            <input type="hidden" name="ItemId" value="@items.First().Meta["itemId"]" />
+            <input type="hidden" name="GroupName" value="@groupName" />
+
+            <table class="pc-table">
+                <tbody>
+                    @foreach (var item in items)
+                    {
+                        <tr class="pc-row @(item.HasError ? "is-excluded hidden" : "")">
+
+                            <!-- Checkbox column -->
+                            <td class="col-select">
+                                @if (!item.HasError)
+                                {
+                                    foreach (var el in item.Elements.Where(e => e.Type == PageContentElementType.Checkbox))
+                                    {
+                                        <input type="checkbox"
+                                               name="@el.Name"
+                                               value="@el.Value" />
+                                    }
+                                }
+                            </td>
+
+                            <!-- Thumbnail -->
+                            <td class="col-thumb">
+                                @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                                {
+                                    <img src="@item.ImageUrl" class="thumb vault-thumb" />
+                                }
+                            </td>
+
+                            <!-- Main text + meta -->
+                            <td class="col-main">
+                                <div class="main-line">@Html.Raw(item.Primary)</div>
+
+                                <div class="meta-line">
+                                    @if (!string.IsNullOrWhiteSpace(item.Secondary))
+                                    {
+                                        <span class="meta-secondary">@Html.Raw(item.Secondary)</span>
+                                    }
+
+                                    @if (!string.IsNullOrWhiteSpace(item.Ticker))
+                                    {
+                                        <span class="meta-tertiary">@Html.Raw(item.Ticker)</span>
+                                    }
+                                </div>
+                            </td>
+
+                            <!-- Value column -->
+                            <td class="col-value">
+                                @if (!string.IsNullOrWhiteSpace(item.SecondFooter))
+                                {
+                                    <span class="value-display">@Html.Raw(item.SecondFooter)</span>
+                                }
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="col-actions">
+
+                                <!-- Primary card link -->
+                                @if (!string.IsNullOrWhiteSpace(item.Url))
+                                {
+                                    <a class="btn secondary btn-small"
+                                       href="@item.Url"
+                                       target="_blank">View</a>
+                                }
+
+                                <!-- Hidden fields (ONLY those defined in Elements) -->
+                                @foreach (var el in item.Elements.Where(e => e.Type == PageContentElementType.Hidden))
+                                {
+                                    <input type="hidden" name="@el.Name" value="@el.Value" />
+                                }
+
+                                <!-- Button elements -->
+                                @foreach (var el in item.Elements.Where(e => e.Type == PageContentElementType.Button))
+                                {
+                                    if (!string.IsNullOrWhiteSpace(el.ActionUrl) &&
+                                        el.ActionUrl.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <button class="btn secondary btn-small"
+                                                onclick="@el.ActionUrl.Substring("javascript:".Length)">
+                                            @el.Text
+                                        </button>
+                                    }
+                                    else if (!string.IsNullOrWhiteSpace(el.ActionUrl))
+                                    {
+                                        <button class="btn secondary btn-small"
+                                                formaction="@el.ActionUrl"
+                                                formmethod="post">
+                                            @el.Text
+                                        </button>
+
+                                    }
+                                    else
+                                    {
+                                        <button class="btn secondary btn-small">@el.Text</button>
+                                    }
+                                }
+
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (parentModel?.GroupButtons?.TryGetValue(groupName, out var groupButtons) == true &&
+                 groupButtons.Any())
+            {
+                <div class="collapsing-group-actions">
+                    @foreach (var btn in groupButtons)
+                    {
+                        if (btn.ActionUrl.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <button type="button" class="btn"
+                                    onclick="@btn.ActionUrl.Substring("javascript:".Length)">
+                                @btn.Text
+                            </button>
+
+                        }
+                        else
+                        {
+                            <button class="btn">@btn.Text</button>
+                        }
+                    }
+                </div>
+            }
+
+        </form>
+
+    </div>
+
+</section>

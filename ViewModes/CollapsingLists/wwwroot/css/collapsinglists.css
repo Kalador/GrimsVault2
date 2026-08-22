@@ -13,6 +13,13 @@
     overflow: hidden;
 }
 
+    .collapsing-group.loading {
+        opacity: 0.5;
+        pointer-events: none;
+        cursor: progress;
+    }
+
+
 .collapsing-header {
     display: flex;
     align-items: center;

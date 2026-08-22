@@ -1,67 +1,64 @@
-﻿    using Microsoft.AspNetCore.Mvc;
-    using Vault.Core;
+﻿        using Microsoft.AspNetCore.Mvc;
+        using Vault.Core;
 
-    namespace Vault.Features.Ebay;
+        namespace Vault.Features.Ebay;
 
-    [Route("ebay")]
-    public sealed class EbayController(EbayService service) : Controller
-    {
-        // ------------------------------------------------------------------------
-        // ENTRY POINT — SHOW LOADER
-        // ------------------------------------------------------------------------
-        [HttpGet("")]
-        public IActionResult Index()
+        [Route("ebay")]
+        public sealed class EbayController(EbayService service) : Controller
         {
-            return View("_Loader", new LoaderModel
+            // ------------------------------------------------------------------------
+            // ENTRY POINT — SHOW LOADER
+            // ------------------------------------------------------------------------
+            [HttpGet("")]
+            public IActionResult Index()
             {
-                Message = "Scanning eBay listings...",
-                TargetUrl = Url.Action("", "ebay"),
-                TargetAction = "LoadEbay"
-            });
-        }
+                return View("_Loader", new LoaderModel
+                {
+                    Message = "Scanning eBay listings...",
+                    TargetUrl = Url.Action("", "ebay"),
+                    TargetAction = "LoadEbay"
+                });
+            }
 
-        // ------------------------------------------------------------------------
-        // LOADER TARGET — RUN THE OPERATION
-        // ------------------------------------------------------------------------
-        [HttpPost("")]
-        [LoaderAction]
-        public async Task<IActionResult> IndexPost(
-            [FromHeader(Name = "X-Loader-Action")] string action)
-        {
-            return action.ToLower() switch
+            // ------------------------------------------------------------------------
+            // LOADER TARGET — RUN THE OPERATION
+            // ------------------------------------------------------------------------
+            [HttpPost("")]
+            [LoaderAction]
+            public async Task<IActionResult> IndexPost(
+                [FromHeader(Name = "X-Loader-Action")] string action)
             {
-                "loadebay" => await LoadEbayItems(),
-                _ => NotFound()
-            };
-        }
+                return action.ToLower() switch
+                {
+                    "loadebay" => await LoadEbayItems(),
+                    _ => NotFound()
+                };
+            }
 
-        // ------------------------------------------------------------------------
-        // INTERNAL: RUN THE EBAY SCAN AND RETURN JSON FOR THE LOADER
-        // ------------------------------------------------------------------------
-        private async Task<IActionResult> LoadEbayItems()
+            // ------------------------------------------------------------------------
+            // INTERNAL: RUN THE EBAY SCAN AND RETURN JSON FOR THE LOADER
+            // ------------------------------------------------------------------------
+            private async Task<IActionResult> LoadEbayItems()
+            {
+                var model = await service.LoadItemsAsync();
+
+                return await ViewModeResult.BuildAsync(
+                    this,
+                    service.DefaultViewMode,
+                    model
+                );
+            }
+
+        [HttpPost("exclude")]
+        public async Task<IActionResult> Exclude([FromForm] EbayExclusionRequest request)
         {
-            var model = await service.LoadItemsAsync();
+            var group = await service.LoadSingleItemAsync(request.ItemId);
 
-            return await ViewModeResult.BuildAsync(
-                this,
-                service.DefaultViewMode,
-                model
-            );
+            var partialPath = service.DefaultViewMode.CardPartialPath;
+
+            return PartialView(partialPath, group);
         }
 
-    // ---------------------------------------------------------------
-    // EXCLUSION POST ENDPOINT (UI only - persistence later)
-    [HttpPost("exclude")]
-        public IActionResult Exclude([FromForm] EbayExclusionRequest request)
-    {
-        // request.ItemId = vault item id
-        // request.ListingIds = all selected listing IDs
 
-        // You manually set ListingType when writing to storage
-        // (e.g., "eBay")
 
-        return RedirectToAction("Index");
     }
-
-
-}

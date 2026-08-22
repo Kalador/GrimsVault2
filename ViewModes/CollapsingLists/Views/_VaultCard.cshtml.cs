@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Vault.ViewModes.CollapsingLists.Views
 {
-    public class _cardModel : PageModel
+    public class _VaultCardModel : PageModel
     {
         public void OnGet()
         {

@@ -1,80 +1,81 @@
-﻿@model Vault.Core.Internal.PageContentModel
+﻿    @model Vault.Core.Internal.PageContentModel
 
-@{
-    ViewData["PageContentModel"] = Model;
+    @{
+        ViewData["PageContentModel"] = Model;
 
-    var grouped = Model.Items
-        .GroupBy(i => i.Group ?? "")
-        .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
-        .ToList();
-}
+        var grouped = Model.Items
+            .GroupBy(i => i.Group ?? "")
+            .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
 
-<div class="vault-page container-narrow">
+    <div class="vault-page container-narrow">
 
-    <!-- Shared 2.0 Header -->
-    <div class="vault-header">
-        @if (Model.Meta.TryGetValue("Title", out var titleObj) && titleObj is string title)
-        {
-            <h2 class="vault-title">@Html.Raw(title)</h2>
-        }
-
-        @if (Model.Meta.TryGetValue("Subtitle", out var subObj) && subObj is string subtitle)
-        {
-            <h2 class="vault-subtitle">@Html.Raw(subtitle)</h2>
-        }
-
-        @if (Model.PageButtons?.Any() == true)
-        {
-            <div class="vault-pagebuttons">
-                @foreach (var btn in Model.PageButtons)
-                {
-                    if (btn.ActionUrl.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase))
-                    {
-                        <button class="btn"
-                                onclick="@btn.ActionUrl.Substring("javascript:".Length)">
-                            @btn.Text
-                        </button>
-                    }
-                    else
-                    {
-                        <form method="post" action="@btn.ActionUrl" class="vault-pagebutton-form">
-                            <button class="btn">@btn.Text</button>
-                        </form>
-                    }
-                }
-            </div>
-        }
-    </div>
-
-    <!-- Shared 2.0 Inputs -->
-    @if (Model.Inputs?.Any() == true)
-    {
-        <div class="vault-inputs">
-            @foreach (var input in Model.Inputs)
+        <!-- Shared 2.0 Header -->
+        <div class="vault-header">
+            @if (Model.Meta.TryGetValue("Title", out var titleObj) && titleObj is string title)
             {
-                <div class="vault-input">
-                    @if (!string.IsNullOrWhiteSpace(input.Label))
-                    {
-                        <label for="@input.Name">@input.Label</label>
-                    }
+                <h2 class="vault-title">@Html.Raw(title)</h2>
+            }
 
-                    <input type="@input.Type"
-                           id="@input.Name"
-                           name="@input.Name"
-                           value="@input.Value" />
+            @if (Model.Meta.TryGetValue("Subtitle", out var subObj) && subObj is string subtitle)
+            {
+                <h2 class="vault-subtitle">@Html.Raw(subtitle)</h2>
+            }
+
+            @if (Model.PageButtons?.Any() == true)
+            {
+                <div class="vault-pagebuttons">
+                    @foreach (var btn in Model.PageButtons)
+                    {
+                        if (btn.ActionUrl.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <button class="btn"
+                                    onclick="@btn.ActionUrl.Substring("javascript:".Length)">
+                                @btn.Text
+                            </button>
+                        }
+                        else
+                        {
+                            <form method="post" action="@btn.ActionUrl" class="vault-pagebutton-form">
+                                <button class="btn">@btn.Text</button>
+                            </form>
+                        }
+                    }
                 </div>
             }
         </div>
-    }
 
-    <!-- Collapsing Groups -->
-    <div class="collapsinglists">
-
-        @foreach (var group in grouped)
+        <!-- Shared 2.0 Inputs -->
+        @if (Model.Inputs?.Any() == true)
         {
-            @await Html.PartialAsync("/ViewModes/CollapsingLists/Views/_Group.cshtml", group)
+            <div class="vault-inputs">
+                @foreach (var input in Model.Inputs)
+                {
+                    <div class="vault-input">
+                        @if (!string.IsNullOrWhiteSpace(input.Label))
+                        {
+                            <label for="@input.Name">@input.Label</label>
+                        }
+
+                        <input type="@input.Type"
+                               id="@input.Name"
+                               name="@input.Name"
+                               value="@input.Value" />
+                    </div>
+                }
+            </div>
         }
 
-    </div>
+        <!-- Collapsing Groups -->
+        <div class="collapsinglists">
 
-</div>
+            @foreach (var group in grouped)
+            {
+                <div class="vault-card-wrapper" id="vault-card-@group.Key">
+                @await Html.PartialAsync("/ViewModes/CollapsingLists/Views/_VaultCard.cshtml", group)
+                </div>
+            }
+
+        </div>
+        

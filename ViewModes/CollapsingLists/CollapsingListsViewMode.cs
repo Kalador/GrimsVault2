@@ -33,7 +33,7 @@ public sealed class CollapsingListsViewMode : VaultViewMode
     /// Path to the card partial used for each <see cref="PageContentItem"/>.
     /// </summary>
     public override string CardPartialPath =>
-        "/ViewModes/CollapsingLists/Views/_Card.cshtml";
+        "/ViewModes/CollapsingLists/Views/_VaultCard.cshtml";
 
     /// <summary>
     /// Stylesheets required by this ViewMode.
