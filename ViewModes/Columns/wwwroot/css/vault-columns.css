@@ -8,6 +8,12 @@
     gap: 1rem;
 }
 
+@media (max-width: 768px) {
+    .columns {
+        grid-template-columns: 1fr;
+    }
+}
+
 .column {
     display: block;
 }

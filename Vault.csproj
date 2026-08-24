@@ -6,14 +6,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-	<PropertyGroup>
-		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-		<AssemblyVersion>1.0.0.0</AssemblyVersion>
-		<FileVersion>1.0.0.*</FileVersion>
-	</PropertyGroup>
+  <PropertyGroup>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.*</FileVersion>
+  </PropertyGroup>
 
-
-	<ItemGroup>
+  <ItemGroup>
     <Compile Remove="ToDoList.cs" />
   </ItemGroup>
 
@@ -21,12 +20,11 @@
     <EditorConfigFiles Remove="C:\Users\User\source\repos\Kalador\Vault\.editorconfig" />
   </ItemGroup>
 
+  <!-- Publish all static assets contained within ViewMode modules -->
   <ItemGroup>
-    <None Remove="ViewModes\Columns\wwwroot\css\vault-columns.css" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="ViewModes\Columns\wwwroot\css\vault-columns.css" />
+    <Content Include="ViewModes\**\wwwroot\**"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

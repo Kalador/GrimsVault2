@@ -8,6 +8,8 @@ namespace Vault.Features.Cex;
 /// </summary>
 public static class CexEmailBuilder
 {
+    private const string VaultCexUrl = "http://grimsvault.runasp.net/cex";
+
     /// <summary>
     /// Generates the subject line for the daily CeX report.
     /// </summary>
@@ -55,7 +57,7 @@ public static class CexEmailBuilder
 
         sb.AppendLine("<div class=\"header\">CeX Stock Check</div>");
         sb.AppendLine($"<div class=\"timestamp\">Generated: {timestamp} UTC</div>");
-        sb.AppendLine("<div class=\"viewall\"><a href=\"/cex\" style=\"color:#0066cc; text-decoration:underline;\">View All</a></div>");
+        sb.AppendLine($"<div class=\"viewall\"><a href=\"{VaultCexUrl}\" style=\"color:#0066cc; text-decoration:underline;\">View All</a></div>");
 
         sb.AppendLine("<table width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">");
 
