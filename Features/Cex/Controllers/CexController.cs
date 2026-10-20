@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Vault.Core;
 
 namespace Vault.Features.Cex;
@@ -42,7 +42,7 @@ public class CexController(CexService cexService) : Controller
     }
 
     // ------------------------------------------------------------
-    // NEW: REPORT ENDPOINTS (CRON)
+    // REPORT ENDPOINTS (CRON)
     // ------------------------------------------------------------
 
     /// <summary>
@@ -56,13 +56,14 @@ public class CexController(CexService cexService) : Controller
     }
 
     /// <summary>
-    /// Sends an INCREMENTAL CeX stock report (changes only).
+    /// The incremental report is deprecated. Its change-tracking behaviour is
+    /// unreliable, and reporting is being changed to use the full report instead.
+    /// Keep this route for existing callers, but redirect them to the full report.
     /// </summary>
     [HttpGet("report/incremental")]
-    public async Task<IActionResult> ReportIncremental()
+    public IActionResult ReportIncremental()
     {
-        var summary = await cexService.SendUpdatedReportAsync();
-        return Content(summary);
+        return RedirectToAction(nameof(ReportFull));
     }
 
     // ------------------------------------------------------------
