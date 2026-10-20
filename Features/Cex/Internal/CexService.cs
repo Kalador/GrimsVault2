@@ -136,6 +136,13 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
             .ReadCache<Dictionary<string, CexBox>>(CacheFile)
             ?? [];
 
+        // Reconcile during page load too, so stale products are removed even
+        // when no refresh or report job has run recently.
+        TrimCacheToTrackedProducts(cache, items
+            .Select(item => item.CexID)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Select(id => id!));
+
         var model = new PageContentModel();
 
         foreach (var item in items)
