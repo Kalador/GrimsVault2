@@ -1,4 +1,4 @@
-﻿using Vault.Core;
+using Vault.Core;
 using Vault.Core.Internal;
 using Vault.ViewModes;
 
@@ -48,25 +48,69 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
         var stores = await vault.GetStores(new QueryDefinition
         {
             Filters =
-    {
-        new QueryFilter
-        {
-            Property = "Priority",
-            Operator = QueryOperator.Equals,
-            Value = true
-        },
-        new QueryFilter
-        {
-            Property = "StoreType",
-            Operator = QueryOperator.Equals,
-            Value = "Cex"
-        }
-    }
+            {
+                new QueryFilter
+                {
+                    Property = "Priority",
+                    Operator = QueryOperator.Equals,
+                    Value = true
+                },
+                new QueryFilter
+                {
+                    Property = "StoreType",
+                    Operator = QueryOperator.Equals,
+                    Value = "Cex"
+                }
+            }
         });
-
 
         _priorityStores = stores;
         _storesLoaded = true;
+    }
+
+    // ------------------------------------------------------------
+    // TRACKED PRODUCTS / CACHE RECONCILIATION
+    // ------------------------------------------------------------
+    private async Task<List<string>> GetTrackedProductIdsAsync()
+    {
+        var items = await vault.GetItems(new QueryDefinition
+        {
+            Filters =
+            {
+                new QueryFilter
+                {
+                    Property = "CEX Product Code",
+                    Operator = QueryOperator.NotEmpty
+                }
+            }
+        });
+
+        return items
+            .Select(i => i.CexID)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Select(id => id!)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Removes cached products that are no longer present in the current tracked-product list.
+    /// If loading that list fails, the exception propagates and the cache is left untouched.
+    /// </summary>
+    private void TrimCacheToTrackedProducts(
+        Dictionary<string, CexBox> cache,
+        IEnumerable<string> trackedIds)
+    {
+        var activeIds = trackedIds.ToHashSet(StringComparer.Ordinal);
+        var staleIds = cache.Keys
+            .Where(id => !activeIds.Contains(id))
+            .ToList();
+
+        foreach (var id in staleIds)
+            cache.Remove(id);
+
+        if (staleIds.Count > 0)
+            vault.Cache.WriteCache(CacheFile, cache);
     }
 
     // ------------------------------------------------------------
@@ -281,7 +325,6 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
                 : $"{otherCount} other stores");
         }
 
-
         if (!box.IsAvailableOnline && priority.Count == 0 && otherCount == 0)
             return "<span class='text-muted'>Out of Stock</span>";
 
@@ -296,21 +339,6 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
         return vault.Cache
             .ReadCache<Dictionary<string, CexBox>>(CacheFile)
             ?? [];
-    }
-
-    private IEnumerable<string> GetMissing(IEnumerable<string> ids)
-    {
-        var cache = ReadCache();
-        return ids.Where(id => !cache.ContainsKey(id));
-    }
-
-    private IEnumerable<CexBox> GetOldest(int count)
-    {
-        var cache = ReadCache();
-
-        return cache.Values
-            .OrderBy(b => b.LastRefreshed)
-            .Take(count);
     }
 
     // ------------------------------------------------------------
@@ -353,31 +381,27 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
     {
         await EnsureStoresLoadedAsync();
 
-        var items = await vault.GetItems(new QueryDefinition
-        {
-            Filters =
-            {
-                new QueryFilter
-                {
-                    Property = "CEX Product Code",
-                    Operator = QueryOperator.NotEmpty
-                }
-            }
-        });
+        // Get the authoritative list first. If this query fails, do not modify the cache.
+        var ids = await GetTrackedProductIdsAsync();
+        var cache = ReadCache();
+        TrimCacheToTrackedProducts(cache, ids);
 
-        var ids = items
-            .Select(i => i.CexID!)
-            .Where(id => !string.IsNullOrWhiteSpace(id))
+        var activeIds = ids.ToHashSet(StringComparer.Ordinal);
+        var missing = ids
+            .Where(id => !cache.ContainsKey(id))
+            .Take(count)
             .ToList();
 
-        var missing = GetMissing(ids).Take(count).ToList();
         var refreshList = new List<string>(missing);
 
         if (refreshList.Count < count)
         {
             var needed = count - refreshList.Count;
-            var oldest = GetOldest(needed)
+            var oldest = cache.Values
+                .Where(b => activeIds.Contains(b.BoxId ?? ""))
+                .OrderBy(b => b.LastRefreshed)
                 .Where(b => !refreshList.Contains(b.BoxId!))
+                .Take(needed)
                 .Select(b => b.BoxId!)
                 .ToList();
 
@@ -419,9 +443,13 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
     {
         await EnsureStoresLoadedAsync();
 
+        var trackedIds = await GetTrackedProductIdsAsync();
+        var cache = ReadCache();
+        TrimCacheToTrackedProducts(cache, trackedIds);
+
         return await _reportHandler.SendFullReportAsync(
             vault,
-            ReadCache(),
+            cache,
             hasLocalStock: HasLocalStockAsync,
             buildStockSummary: BuildTickerAsync
         );
@@ -434,9 +462,13 @@ public class CexService(VaultService vault) : VaultFeatureBase, IVaultFeature
     {
         await EnsureStoresLoadedAsync();
 
+        var trackedIds = await GetTrackedProductIdsAsync();
+        var cache = ReadCache();
+        TrimCacheToTrackedProducts(cache, trackedIds);
+
         return await _reportHandler.SendUpdatedReportAsync(
             vault,
-            ReadCache(),
+            cache,
             getLocalStoresForBox: GetLocalStoresForBoxAsync,
             buildStockSummary: BuildTickerAsync
         );
